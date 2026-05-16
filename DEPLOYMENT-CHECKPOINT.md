@@ -55,6 +55,16 @@ API readiness should include Redis and RabbitMQ:
 curl -fsS http://kube1.lab.auzietek.com:30081/readyz
 ```
 
+Current lab discovery note:
+
+- Intended names: `kube1.lab.auzietek.com`, `kube2.lab.auzietek.com`
+- DNS currently resolves them as `192.168.1.24` and `192.168.1.19` from this
+  workstation, but those addresses do not answer.
+- Live NodePort/API endpoints were found at `192.168.1.14` and `192.168.1.59`.
+- HTTP validation works on both live addresses, but SSH key access is denied for
+  `root` and `auzieman`, so image import and `kubectl` rollout actions are
+  blocked until DNS and SSH access are aligned.
+
 Exercise one prescription end to end:
 
 ```bash
