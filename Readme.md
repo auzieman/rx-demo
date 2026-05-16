@@ -108,6 +108,7 @@ Provisioned dashboards:
 - `Rx Overview`
 - `Rx Service Flow`
 - `Rx Executive Health`
+- `Rx Tempo Traces`
 
 The executive dashboard uses component health gauges emitted by the services:
 
@@ -122,6 +123,17 @@ Weighted health is calculated with:
 sum(max by(component) (rx_component_health_percent) * on(component) max by(component) (rx_component_weight_percent))
 /
 sum(max by(component) (rx_component_weight_percent))
+```
+
+The Tempo traces dashboard uses TraceQL metrics for dashboard panels and links
+to Tempo Explore for raw trace waterfall inspection. Useful queries for this
+demo include:
+
+```traceql
+{ resource.service.namespace = "rx" }
+{ resource.service.namespace = "rx" && status = error }
+{ resource.service.namespace = "rx" } | rate() by (resource.service.name)
+{ resource.service.namespace = "rx" } | quantile_over_time(span:duration, .95) by (resource.service.name)
 ```
 
 ## Kubernetes

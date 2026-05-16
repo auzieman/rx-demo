@@ -35,6 +35,8 @@
     th { font-size: .92rem; color: #4f6d7a; text-transform: uppercase; letter-spacing: .04em; }
     tr:hover td { background: #f4f9fb; }
     .pill { display: inline-block; padding: .25rem .55rem; border-radius: 999px; background: #d8edf7; color: #114b5f; font-size: .85rem; }
+    .state { padding: .85rem 1rem; border-radius: 8px; border: 1px solid #d6e0e6; background: #eef6fa; margin: 1rem 0; }
+    .state.error { background: #fff3f3; border-color: #f0b5b5; color: #8a1f1f; }
     .pager { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 1rem; }
     .pager .actions { gap: .5rem; }
     .pager button[disabled] { opacity: .5; cursor: default; }
@@ -109,6 +111,20 @@
               <strong>@(Model.ListPage?.PageSize ?? Model.PageSize)</strong>
             </div>
           </div>
+          @if (Model.HasListError)
+          {
+              <div class="state error">
+                <strong>Read model unavailable</strong>
+                <div>@Model.ListError</div>
+              </div>
+          }
+          else if (!Model.HasListItems)
+          {
+              <div class="state">
+                <strong>No prescriptions found</strong>
+                <div>Approve or refill a prescription, then refresh this list.</div>
+              </div>
+          }
           <table>
             <thead>
               <tr>
@@ -119,9 +135,9 @@
               </tr>
             </thead>
             <tbody>
-            @if (Model.ListPage?.Items?.Any() == true)
+            @if (Model.HasListItems)
             {
-                foreach (var item in Model.ListPage.Items)
+                foreach (var item in Model.ListPage!.Items)
                 {
                     <tr>
                       <td><span class="pill">@item.RxId</span></td>
@@ -134,7 +150,7 @@
             else
             {
                 <tr>
-                  <td colspan="4">No prescriptions in the read model yet. Trigger approve/refill traffic first.</td>
+                  <td colspan="4">No rows to display.</td>
                 </tr>
             }
             </tbody>

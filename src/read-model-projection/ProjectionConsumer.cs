@@ -45,7 +45,7 @@ public sealed class ProjectionConsumer : IConsumer<PrescriptionChangedEvent>
 
                 // Update read model (15-minute TTL)
                 var cacheSw = Stopwatch.StartNew();
-                await _store.UpsertAsync(view, TimeSpan.FromMinutes(15));
+                await _store.UpsertAsync(view, TimeSpan.FromHours(24));
                 cacheSw.Stop();
                 Metrics.RecordCache("redis", "set", "success", cacheSw.Elapsed.TotalMilliseconds);
 

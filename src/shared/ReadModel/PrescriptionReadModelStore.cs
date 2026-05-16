@@ -55,20 +55,42 @@ public sealed class PrescriptionReadModelStore
         var db = _mux.GetDatabase();
 
         var start = (safePage - 1) * safePageSize;
-        var stop = start + safePageSize - 1;
+        var stop = start + safePageSize;
+        var items = new List<PrescriptionReadModel>(safePageSize);
+        var staleIds = new List<RedisValue>();
+        var validIndex = 0;
+        long rank = 0;
+        const int batchSize = 250;
 
-        var ids = await db.SortedSetRangeByRankAsync(IndexKey, start, stop, Order.Descending);
-        var items = new List<PrescriptionReadModel>(ids.Length);
-
-        foreach (var id in ids)
+        while (true)
         {
-            if (!id.HasValue)
-                continue;
+            var ids = await db.SortedSetRangeByRankAsync(IndexKey, rank, rank + batchSize - 1, Order.Descending);
+            if (ids.Length == 0)
+                break;
 
-            var item = await GetAsync(id!);
-            if (item is not null)
-                items.Add(item);
+            foreach (var id in ids)
+            {
+                if (!id.HasValue)
+                    continue;
+
+                var item = await GetAsync(id!);
+                if (item is null)
+                {
+                    staleIds.Add(id);
+                    continue;
+                }
+
+                if (validIndex >= start && validIndex < stop)
+                    items.Add(item);
+
+                validIndex++;
+            }
+
+            rank += ids.Length;
         }
+
+        if (staleIds.Count > 0)
+            await db.SortedSetRemoveAsync(IndexKey, staleIds.ToArray());
 
         var total = await db.SortedSetLengthAsync(IndexKey);
         return new PrescriptionListPage(items, total, safePage, safePageSize);

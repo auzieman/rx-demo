@@ -29,6 +29,9 @@ public class IndexModel : PageModel
 
     public string? Message { get; set; }
     public RxApiClient.RxListPage? ListPage { get; set; }
+    public string? ListError { get; set; }
+    public bool HasListError => !string.IsNullOrWhiteSpace(ListError);
+    public bool HasListItems => ListPage?.Items?.Any() == true;
     public int[] PageSizeOptions { get; } = new[] { 10, 20, 50 };
     public int TotalPages => ListPage is null || ListPage.PageSize <= 0
         ? 1
@@ -154,6 +157,7 @@ public class IndexModel : PageModel
         {
             ListPage = await _api.GetPrescriptionsAsync(PageNumber, PageSize)
                 ?? new RxApiClient.RxListPage(Array.Empty<RxApiClient.RxInfo>(), 0, PageNumber, PageSize);
+            ListError = null;
             _logger.LogInformation("UI list loaded {Count} items for page {Page}", ListPage.Items.Count, ListPage.Page);
         }
         catch (Exception ex)
@@ -162,6 +166,7 @@ public class IndexModel : PageModel
             _logger.LogError(ex, "UI list failed for page {Page}", PageNumber);
             Metrics.RecordError("rx-ui", ex.GetType().Name);
             Message ??= ex.Message;
+            ListError = $"{ex.GetType().Name}: {ex.Message}";
             ListPage = new RxApiClient.RxListPage(Array.Empty<RxApiClient.RxInfo>(), 0, PageNumber, PageSize);
         }
         finally
