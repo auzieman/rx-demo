@@ -1,0 +1,72 @@
+{
+  "version": "1.0",
+  "requests": [
+    {
+      "description": "GET prescription",
+      "url": "{{API_BASE_URL}}/prescriptions/{{RX_ID}}",
+      "method": "GET",
+      "requestTimeout": 10000,
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": true,
+        "headers": {
+          "headers": [
+            { "name": "Accept", "value": "application/json" }
+          ]
+        }
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "\"rxId\":\"{{RX_ID}}\"" }
+        ]
+      }
+    },
+    {
+      "description": "POST approve",
+      "url": "{{API_BASE_URL}}/prescriptions/{{RX_ID}}/approve",
+      "method": "POST",
+      "body": "{\"approvedBy\":\"{{APPROVED_BY}}\",\"notes\":\"{{NOTES}}\"}",
+      "requestTimeout": 10000,
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": true,
+        "headers": {
+          "headers": [
+            { "name": "Accept", "value": "application/json" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "202" },
+          { "type": "contentMatch", "value": "ApproveQueued" }
+        ]
+      }
+    },
+    {
+      "description": "POST refill",
+      "url": "{{API_BASE_URL}}/prescriptions/{{RX_ID}}/refill",
+      "method": "POST",
+      "body": "{\"refillCount\":1}",
+      "requestTimeout": 10000,
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": true,
+        "headers": {
+          "headers": [
+            { "name": "Accept", "value": "application/json" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "202" },
+          { "type": "contentMatch", "value": "RefillQueued" }
+        ]
+      }
+    }
+  ]
+}

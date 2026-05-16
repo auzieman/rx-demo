@@ -1,0 +1,318 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  labels:
+    app.kubernetes.io/name: api-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-gateway
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: api-gateway
+          image: rx-demo/api-gateway:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: rx-demo-config
+          env:
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__LegacyDb
+              value: "Server=mssql;Database=RxDemo;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=true;Connect Timeout=5;"
+            - name: Messaging__HostName
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: RABBITMQ_HOST
+            - name: Messaging__VirtualHost
+              value: "/"
+            - name: Messaging__Port
+              value: "5672"
+            - name: Messaging__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_USER
+            - name: Messaging__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: Messaging__QueueName
+              value: "rx.commands"
+            - name: Messaging__EventsQueue
+              value: "rx.events"
+            - name: Cache__Redis
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: REDIS_ENDPOINT
+            - name: Otel__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENDPOINT_HTTP
+            - name: Otel__ServiceNamespace
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_SERVICE_NAMESPACE
+            - name: Otel__Environment
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENVIRONMENT
+            - name: RxHealth__ComponentWeight
+              value: "25"
+            - name: RxHealth__ErrorPenaltyPercent
+              value: "15"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  labels:
+    app.kubernetes.io/name: api-gateway
+spec:
+  selector:
+    app.kubernetes.io/name: api-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: legacy-sync-worker
+  labels:
+    app.kubernetes.io/name: legacy-sync-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: legacy-sync-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: legacy-sync-worker
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: worker
+          image: rx-demo/legacy-sync-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: SA_PASSWORD
+            - name: ConnectionStrings__LegacyDb
+              value: "Server=mssql;Database=RxDemo;User Id=sa;Password=$(SA_PASSWORD);TrustServerCertificate=true;Connect Timeout=5;"
+            - name: Messaging__HostName
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: RABBITMQ_HOST
+            - name: Messaging__VirtualHost
+              value: "/"
+            - name: Messaging__Port
+              value: "5672"
+            - name: Messaging__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_USER
+            - name: Messaging__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: Messaging__QueueName
+              value: "rx.commands"
+            - name: Messaging__EventsQueue
+              value: "rx.events"
+            - name: Otel__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENDPOINT_HTTP
+            - name: Otel__ServiceNamespace
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_SERVICE_NAMESPACE
+            - name: Otel__Environment
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENVIRONMENT
+            - name: RxHealth__ComponentWeight
+              value: "25"
+            - name: RxHealth__ErrorPenaltyPercent
+              value: "15"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: read-model-projection
+  labels:
+    app.kubernetes.io/name: read-model-projection
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: read-model-projection
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: read-model-projection
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: worker
+          image: rx-demo/read-model-projection:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: Cache__Redis
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: REDIS_ENDPOINT
+            - name: Messaging__HostName
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: RABBITMQ_HOST
+            - name: Messaging__VirtualHost
+              value: "/"
+            - name: Messaging__Port
+              value: "5672"
+            - name: Messaging__Username
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_USER
+            - name: Messaging__Password
+              valueFrom:
+                secretKeyRef:
+                  name: rx-demo-secrets
+                  key: RABBITMQ_DEFAULT_PASS
+            - name: Messaging__EventsQueue
+              value: "rx.events"
+            - name: Otel__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENDPOINT_HTTP
+            - name: Otel__ServiceNamespace
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_SERVICE_NAMESPACE
+            - name: Otel__Environment
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENVIRONMENT
+            - name: RxHealth__ComponentWeight
+              value: "25"
+            - name: RxHealth__ErrorPenaltyPercent
+              value: "15"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rx-ui
+  labels:
+    app.kubernetes.io/name: rx-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rx-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: rx-ui
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: rx-ui
+          image: rx-demo/rx-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: RxApi__BaseUrl
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: API_BASE_URL
+            - name: Otel__Endpoint
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENDPOINT_HTTP
+            - name: Otel__ServiceNamespace
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_SERVICE_NAMESPACE
+            - name: Otel__Environment
+              valueFrom:
+                configMapKeyRef:
+                  name: rx-demo-config
+                  key: OTEL_ENVIRONMENT
+            - name: RxHealth__ComponentWeight
+              value: "15"
+            - name: RxHealth__ErrorPenaltyPercent
+              value: "15"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rx-ui
+  labels:
+    app.kubernetes.io/name: rx-ui
+spec:
+  selector:
+    app.kubernetes.io/name: rx-ui
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

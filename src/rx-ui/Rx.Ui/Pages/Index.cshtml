@@ -1,0 +1,167 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Rx Demo UI";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>@ViewData["Title"]</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 2rem; background: #f3f6f8; color: #16303d; }
+    .shell { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #d6e0e6; border-radius: 12px; box-shadow: 0 10px 30px rgba(27,44,58,.08); overflow: hidden; }
+    .hero { padding: 1.5rem 1.75rem; background: linear-gradient(135deg, #114b5f, #1a759f); color: #fff; }
+    .content { padding: 1.5rem 1.75rem 2rem; }
+    .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
+    .stack { display: grid; gap: 1rem; margin-top: 1rem; }
+    .panel { border: 1px solid #d6e0e6; border-radius: 10px; padding: 1rem; background: #fbfdfe; }
+    .field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: 1rem; }
+    label { font-weight: 600; }
+    input, button { font-size: 1rem; padding: .65rem .75rem; border-radius: 8px; border: 1px solid #b9cbd6; }
+    select { font-size: 1rem; padding: .65rem .75rem; border-radius: 8px; border: 1px solid #b9cbd6; background: #fff; }
+    button { border: none; background: #1a759f; color: #fff; cursor: pointer; }
+    button.secondary { background: #4f6d7a; }
+    button.tertiary { background: #8d99ae; }
+    .actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .toolbar { display: flex; gap: 1rem; align-items: end; justify-content: space-between; flex-wrap: wrap; }
+    .toolbar form { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
+    .stats { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .stat { padding: .75rem 1rem; border-radius: 10px; background: #eef6fa; border: 1px solid #d6e0e6; min-width: 140px; }
+    .stat strong { display: block; font-size: 1.35rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { text-align: left; padding: .75rem .6rem; border-bottom: 1px solid #dce6eb; }
+    th { font-size: .92rem; color: #4f6d7a; text-transform: uppercase; letter-spacing: .04em; }
+    tr:hover td { background: #f4f9fb; }
+    .pill { display: inline-block; padding: .25rem .55rem; border-radius: 999px; background: #d8edf7; color: #114b5f; font-size: .85rem; }
+    .pager { display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 1rem; }
+    .pager .actions { gap: .5rem; }
+    .pager button[disabled] { opacity: .5; cursor: default; }
+    pre { background: #0f1720; color: #cfe8f3; padding: 1rem; border-radius: 10px; overflow-x: auto; min-height: 220px; }
+    .hint { color: #506874; font-size: .95rem; margin: 0; }
+    @@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div class="hero">
+      <h1>Prescription Demo UI</h1>
+      <p class="hint">Simple local operator view for the API gateway, refill workflow, and approval actions.</p>
+    </div>
+    <div class="content">
+      <div class="grid">
+        <div class="panel">
+          <form method="post">
+            <div class="field">
+              <label for="rx">Rx ID</label>
+              <input id="rx" asp-for="RxId" />
+            </div>
+            <div class="field">
+              <label for="refill">Refill Count</label>
+              <input id="refill" asp-for="RefillCount" type="number" min="1" />
+            </div>
+            <div class="actions">
+              <button type="submit" asp-page-handler="Get">Lookup</button>
+              <button type="submit" asp-page-handler="Approve" class="secondary">Approve</button>
+              <button type="submit" asp-page-handler="Refill" class="tertiary">Refill</button>
+            </div>
+          </form>
+        </div>
+        <div class="panel">
+          <h3>Notes</h3>
+          <p class="hint">The UI calls the API gateway server-side, so it works cleanly both on Docker Desktop and in Kubernetes.</p>
+          <p class="hint">Default route targets can be overridden with <code>RxApi__BaseUrl</code>.</p>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h3>Prescription Read Model</h3>
+              <p class="hint">Paged operator view backed by the Redis read model.</p>
+            </div>
+            <form method="get">
+              <div class="field">
+                <label for="pageSize">Page Size</label>
+                <select id="pageSize" asp-for="PageSize">
+                  @foreach (var option in Model.PageSizeOptions)
+                  {
+                      <option value="@option">@option</option>
+                  }
+                </select>
+              </div>
+              <input type="hidden" name="PageNumber" value="1" />
+              <button type="submit">Refresh</button>
+            </form>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <span>Total Records</span>
+              <strong>@(Model.ListPage?.Total ?? 0)</strong>
+            </div>
+            <div class="stat">
+              <span>Current Page</span>
+              <strong>@(Model.ListPage?.Page ?? Model.PageNumber)</strong>
+            </div>
+            <div class="stat">
+              <span>Page Size</span>
+              <strong>@(Model.ListPage?.PageSize ?? Model.PageSize)</strong>
+            </div>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Rx ID</th>
+                <th>Status</th>
+                <th>Version</th>
+                <th>Changed</th>
+              </tr>
+            </thead>
+            <tbody>
+            @if (Model.ListPage?.Items?.Any() == true)
+            {
+                foreach (var item in Model.ListPage.Items)
+                {
+                    <tr>
+                      <td><span class="pill">@item.RxId</span></td>
+                      <td>@item.Status</td>
+                      <td>@item.Version</td>
+                      <td>@item.ChangedAt.ToLocalTime().ToString("u")</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                  <td colspan="4">No prescriptions in the read model yet. Trigger approve/refill traffic first.</td>
+                </tr>
+            }
+            </tbody>
+          </table>
+          <div class="pager">
+            <span class="hint">Page @(Model.ListPage?.Page ?? Model.PageNumber) of @Model.TotalPages</span>
+            <div class="actions">
+              <form method="get">
+                <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                <input type="hidden" name="PageNumber" value="@(Math.Max(1, (Model.ListPage?.Page ?? Model.PageNumber) - 1))" />
+                <button type="submit" class="secondary" disabled="@((Model.ListPage?.Page ?? Model.PageNumber) <= 1)">Previous</button>
+              </form>
+              <form method="get">
+                <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                <input type="hidden" name="PageNumber" value="@Math.Min(Model.TotalPages, (Model.ListPage?.Page ?? Model.PageNumber) + 1)" />
+                <button type="submit" class="secondary" disabled="@((Model.ListPage?.Page ?? Model.PageNumber) >= Model.TotalPages)">Next</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      @if (!string.IsNullOrWhiteSpace(Model.Message))
+      {
+          <h3>Result</h3>
+          <pre>@Model.Message</pre>
+      }
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,321 @@
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+  redis-data:
+  mssql-data:
+  grafana-data:
+  loki-data:
+  tempo-data:
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:?set RABBITMQ_DEFAULT_USER in .env}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:?set RABBITMQ_DEFAULT_PASS in .env}"
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${SA_PASSWORD:?set SA_PASSWORD in .env}"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$${SA_PASSWORD}' -Q 'SELECT 1' -No || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 90s
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    command: ["--config=/etc/otel-collector.yaml"]
+    env_file: .env
+    environment:
+      LOKI_ENDPOINT: "${LOKI_ENDPOINT:-http://loki:3100/loki/api/v1/push}"
+      TEMPO_ENDPOINT: "${TEMPO_ENDPOINT:-http://tempo:4318}"
+    volumes:
+      - ./collector/otel-collector-local.yaml:/etc/otel-collector.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "9464:9464"
+    restart: unless-stopped
+    networks:
+      app_net:
+        aliases:
+          - otel-collector
+
+  prometheus:
+    profiles: ["local-observability"]
+    image: prom/prometheus:v2.53.1
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./collector/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  loki:
+    profiles: ["local-observability"]
+    image: grafana/loki:3.1.1
+    command: ["-config.file=/etc/loki/config.yml"]
+    volumes:
+      - ./collector/loki-config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  tempo:
+    profiles: ["local-observability"]
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo/tempo.yml"]
+    volumes:
+      - ./collector/tempo.yml:/etc/tempo/tempo.yml:ro
+      - tempo-data:/var/tempo
+    ports:
+      - "3200:3200"
+      - "4319:4318"
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  promtail:
+    profiles: ["local-observability"]
+    image: grafana/promtail:3.1.1
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./collector/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      loki:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  grafana:
+    profiles: ["local-observability"]
+    image: grafana/grafana:11.1.4
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER:-admin}"
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./collector/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+      - ./collector/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - ./collector/rx-overview-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-overview-dashboard.json:ro
+      - ./collector/rx-service-flow-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-service-flow-dashboard.json:ro
+      - ./collector/rx-executive-health-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-executive-health-dashboard.json:ro
+    depends_on:
+      loki:
+        condition: service_started
+      prometheus:
+        condition: service_started
+      tempo:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/api-gateway/Dockerfile
+    env_file: .env
+    environment:
+      ConnectionStrings__LegacyDb: "Server=mssql;Database=RxDemo;User Id=sa;Password=${SA_PASSWORD:?set SA_PASSWORD in .env};TrustServerCertificate=true;Connect Timeout=5;"
+      Messaging__HostName: "rabbitmq"
+      Messaging__VirtualHost: "/"
+      Messaging__Port: "5672"
+      Messaging__Username: "${RABBITMQ_DEFAULT_USER:?set RABBITMQ_DEFAULT_USER in .env}"
+      Messaging__Password: "${RABBITMQ_DEFAULT_PASS:?set RABBITMQ_DEFAULT_PASS in .env}"
+      Messaging__QueueName: "rx.commands"
+      Messaging__EventsQueue: "rx.events"
+      Cache__Redis: "redis:6379"
+      Otel__Endpoint: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
+      Otel__ServiceNamespace: "rx"
+      Otel__Environment: "${Otel__Environment:-dev}"
+      RxHealth__ComponentWeight: "25"
+      RxHealth__ErrorPenaltyPercent: "15"
+    ports:
+      - "8080:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mssql:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  legacy-sync-worker:
+    build:
+      context: .
+      dockerfile: src/legacy-sync-worker/Dockerfile
+    env_file: .env
+    environment:
+      ConnectionStrings__LegacyDb: "Server=mssql;Database=RxDemo;User Id=sa;Password=${SA_PASSWORD:?set SA_PASSWORD in .env};TrustServerCertificate=true;Connect Timeout=5;"
+      Messaging__HostName: "rabbitmq"
+      Messaging__VirtualHost: "/"
+      Messaging__Port: "5672"
+      Messaging__Username: "${RABBITMQ_DEFAULT_USER:?set RABBITMQ_DEFAULT_USER in .env}"
+      Messaging__Password: "${RABBITMQ_DEFAULT_PASS:?set RABBITMQ_DEFAULT_PASS in .env}"
+      Messaging__QueueName: "rx.commands"
+      Messaging__EventsQueue: "rx.events"
+      Otel__Endpoint: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
+      Otel__ServiceNamespace: "rx"
+      Otel__Environment: "${Otel__Environment:-dev}"
+      RxHealth__ComponentWeight: "25"
+      RxHealth__ErrorPenaltyPercent: "15"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mssql:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  read-model-projection:
+    build:
+      context: .
+      dockerfile: src/read-model-projection/Dockerfile
+    env_file: .env
+    environment:
+      Cache__Redis: "redis:6379"
+      Messaging__HostName: "rabbitmq"
+      Messaging__VirtualHost: "/"
+      Messaging__Port: "5672"
+      Messaging__Username: "${RABBITMQ_DEFAULT_USER:?set RABBITMQ_DEFAULT_USER in .env}"
+      Messaging__Password: "${RABBITMQ_DEFAULT_PASS:?set RABBITMQ_DEFAULT_PASS in .env}"
+      Messaging__EventsQueue: "rx.events"
+      Otel__Endpoint: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
+      Otel__ServiceNamespace: "rx"
+      Otel__Environment: "${Otel__Environment:-dev}"
+      RxHealth__ComponentWeight: "25"
+      RxHealth__ErrorPenaltyPercent: "15"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  rx-ui:
+    build:
+      context: .
+      dockerfile: src/rx-ui/Rx.Ui/Dockerfile
+    env_file: .env
+    environment:
+      RxApi__BaseUrl: "http://api-gateway:8080"
+      Otel__Endpoint: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
+      Otel__ServiceNamespace: "rx"
+      Otel__Environment: "${Otel__Environment:-dev}"
+      RxHealth__ComponentWeight: "15"
+      RxHealth__ErrorPenaltyPercent: "15"
+    ports:
+      - "8081:8080"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}
+
+  loadgen:
+    profiles: ["load"]
+    build:
+      context: ./src/loadgen
+    environment:
+      BASE_URL: "http://api-gateway:8080"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
+      OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
+      SERVICE_NAME: "rx-loadgen"
+      SERVICE_NAMESPACE: "rx"
+      ENV: "${Otel__Environment:-dev}"
+      HEALTH_WEIGHT: "10"
+      HEALTH_ERROR_PENALTY: "15"
+      RPS: "${LOADGEN_RPS:-2}"
+      DURATION_SECONDS: "${LOADGEN_DURATION_SECONDS:-0}"
+      MIX_READ: "${LOADGEN_MIX_READ:-0.20}"
+      MIX_APPROVE: "${LOADGEN_MIX_APPROVE:-0.40}"
+      MIX_REFILL: "${LOADGEN_MIX_REFILL:-0.40}"
+      FAULT_RATE: "${LOADGEN_FAULT_RATE:-0.00}"
+      FAULT_MODES: "${LOADGEN_FAULT_MODES:-worker-transient-once,projection-fail,cache-fail,api-slow}"
+      WORKERS: "${LOADGEN_WORKERS:-4}"
+      PROGRESS_INTERVAL_SECONDS: "${LOADGEN_PROGRESS_INTERVAL_SECONDS:-30}"
+    depends_on:
+      api-gateway:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      mssql:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      app_net: {}

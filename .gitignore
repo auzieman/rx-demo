@@ -1,0 +1,26 @@
+# Local configuration
+.env
+!.env.sample
+
+# .NET build outputs
+**/bin/
+**/obj/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Node/front-end artifacts
+node_modules/
+dist/
+
+# Logs/temp/editor state
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.user
+*.suo
+*.swp

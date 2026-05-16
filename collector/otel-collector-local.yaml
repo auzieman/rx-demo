@@ -1,0 +1,53 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+  filter/metrics:
+    error_mode: ignore
+    metrics:
+      datapoint:
+        - 'attributes["queue"] == "dev-noisy"'
+  metricstransform/labels:
+    transforms:
+      - include: "^rx\\..*"
+        match_type: regexp
+        action: update
+        operations:
+          - action: update_label
+            label: queue
+            new_label: destination
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:9464"
+  loki:
+    endpoint: "${LOKI_ENDPOINT}"
+    default_labels_enabled:
+      exporter: false
+      job: true
+      instance: true
+  otlphttp/tempo:
+    endpoint: "${TEMPO_ENDPOINT}"
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/tempo, debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch, filter/metrics, metricstransform/labels]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki, debug]

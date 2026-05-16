@@ -1,0 +1,37 @@
+{
+  "version": "1.0",
+  "requests": [
+    {
+      "description": "GET UI root",
+      "url": "{{UI_BASE_URL}}/",
+      "method": "GET",
+      "requestTimeout": 10000,
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": false
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "Prescription Demo UI" }
+        ]
+      }
+    },
+    {
+      "description": "GET UI health",
+      "url": "{{UI_BASE_URL}}/healthz",
+      "method": "GET",
+      "requestTimeout": 10000,
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": false
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "Healthy" }
+        ]
+      }
+    }
+  ]
+}

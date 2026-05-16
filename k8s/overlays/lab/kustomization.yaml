@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - path: loki-endpoint-patch.yaml
+  - path: rx-ui-nodeport.yaml
+    target:
+      kind: Service
+      name: rx-ui
+  - path: api-gateway-nodeport.yaml
+    target:
+      kind: Service
+      name: api-gateway
+images:
+  - name: rx-demo/api-gateway
+    newName: rx-demo/api-gateway
+    newTag: latest
+  - name: rx-demo/legacy-sync-worker
+    newName: rx-demo/legacy-sync-worker
+    newTag: latest
+  - name: rx-demo/read-model-projection
+    newName: rx-demo/read-model-projection
+    newTag: latest
+  - name: rx-demo/rx-ui
+    newName: rx-demo/rx-ui
+    newTag: latest
+  - name: rx-demo/loadgen
+    newName: rx-demo/loadgen
+    newTag: latest
