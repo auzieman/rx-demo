@@ -157,6 +157,7 @@ services:
       - ./collector/rx-overview-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-overview-dashboard.json:ro
       - ./collector/rx-service-flow-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-service-flow-dashboard.json:ro
       - ./collector/rx-executive-health-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-executive-health-dashboard.json:ro
+      - ./collector/rx-executive-flow-grafmaid-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-executive-flow-grafmaid-dashboard.json:ro
       - ./collector/rx-tempo-traces-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-tempo-traces-dashboard.json:ro
     depends_on:
       loki:

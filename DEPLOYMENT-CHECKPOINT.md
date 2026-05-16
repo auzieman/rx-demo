@@ -80,6 +80,9 @@ Expected observability signals:
 
 Short-term dashboard updates:
 
+- Start with Grafmaid for the executive service map. The shared lab Grafana
+  already has `neildengg-grafmaid-panel` installed, and the repo now includes
+  `collector/rx-executive-flow-grafmaid-dashboard.json`.
 - Add a direct RabbitMQ flow panel set: command publish, command consume,
   event publish, event consume, and projection cache writes.
 - Make executive health visibly explain its weighting: component weight,

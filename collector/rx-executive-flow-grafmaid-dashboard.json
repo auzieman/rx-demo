@@ -1,0 +1,377 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Executive Health",
+      "tooltip": "Open weighted component health",
+      "type": "dashboard",
+      "uid": "rx-exec-health"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Service Flow",
+      "tooltip": "Open detailed message flow",
+      "type": "dashboard",
+      "uid": "rx-service-flow"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "flowchart LR\n  classDef good fill:#2e7d32,color:#fff,stroke:#1b5e20,stroke-width:2px\n  classDef warn fill:#f9a825,color:#141414,stroke:#f57f17,stroke-width:2px\n  classDef bad fill:#c62828,color:#fff,stroke:#8e0000,stroke-width:2px\n  classDef core fill:#263238,color:#fff,stroke:#90a4ae,stroke-width:1px\n  classDef data fill:#1565c0,color:#fff,stroke:#0d47a1,stroke-width:1px\n  classDef obs fill:#6a1b9a,color:#fff,stroke:#4a148c,stroke-width:1px\n\n  operator[Operator / rx-ui<br/>${__data.ui:display}]:::core\n  load[Loadgen<br/>${__data.loadgen:display}]:::core\n  api[API Gateway<br/>${__data.api:display}]:::core\n  commands[(RabbitMQ commands<br/>publish ${__data.commandPublish:display} / consume ${__data.commandConsume:display})]:::data\n  worker[Legacy Sync Worker<br/>${__data.worker:display}]:::core\n  sql[(SQL transactional model)]:::data\n  events[(RabbitMQ events<br/>publish ${__data.eventPublish:display} / consume ${__data.eventConsume:display})]:::data\n  projection[Read Model Projection<br/>${__data.projection:display}]:::core\n  redis[(Redis read model)]:::data\n  otel[OpenTelemetry Collector]:::obs\n  grafana[Grafana executive view]:::obs\n\n  operator --> api\n  load --> api\n  api --> commands\n  commands --> worker\n  worker --> sql\n  worker --> events\n  events --> projection\n  projection --> redis\n  api --> redis\n\n  operator -. telemetry .-> otel\n  load -. telemetry .-> otel\n  api -. telemetry .-> otel\n  worker -. telemetry .-> otel\n  projection -. telemetry .-> otel\n  otel --> grafana\n\n  style api fill:${__data.api:color},color:#fff\n  style worker fill:${__data.worker:color},color:#fff\n  style projection fill:${__data.projection:color},color:#fff\n  style operator fill:${__data.ui:color},color:#fff\n  style load fill:${__data.loadgen:color},color:#fff",
+        "escapeSpecialChars": false,
+        "maxDataRows": 100
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent{component=\"api-gateway\"})",
+          "legendFormat": "api",
+          "range": true,
+          "refId": "api"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent{component=\"legacy-sync-worker\"})",
+          "legendFormat": "worker",
+          "range": true,
+          "refId": "worker"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent{component=\"read-model-projection\"})",
+          "legendFormat": "projection",
+          "range": true,
+          "refId": "projection"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent{component=\"rx-ui\"})",
+          "legendFormat": "ui",
+          "range": true,
+          "refId": "ui"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent{component=\"rx-loadgen\"})",
+          "legendFormat": "loadgen",
+          "range": true,
+          "refId": "loadgen"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.commands\"}[$__rate_interval]))",
+          "legendFormat": "command publish",
+          "range": true,
+          "refId": "commandPublish"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.commands\",direction=\"consume\"}[$__rate_interval]))",
+          "legendFormat": "command consume",
+          "range": true,
+          "refId": "commandConsume"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.events\"}[$__rate_interval]))",
+          "legendFormat": "event publish",
+          "range": true,
+          "refId": "eventPublish"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.events\",direction=\"consume\"}[$__rate_interval]))",
+          "legendFormat": "event consume",
+          "range": true,
+          "refId": "eventConsume"
+        }
+      ],
+      "title": "Executive Service Flow",
+      "type": "neildengg-grafmaid-panel"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 18
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(max by(component) (rx_component_health_percent) * on(component) max by(component) (rx_component_weight_percent)) / sum(max by(component) (rx_component_weight_percent))",
+          "legendFormat": "overall",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Overall Weighted Health",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 8,
+        "y": 18
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rx_component_error_events_5m)",
+          "legendFormat": "recent errors",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Recent Error Events",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.01
+              },
+              {
+                "color": "red",
+                "value": 0.1
+              }
+            ]
+          },
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 16,
+        "y": 18
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_synthetic_errors_total[$__rate_interval]))",
+          "legendFormat": "synthetic errors",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Synthetic Error Rate",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "rx-demo",
+    "executive",
+    "grafmaid",
+    "flow"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Rx Executive Flow",
+  "uid": "rx-executive-flow",
+  "version": 1,
+  "weekStart": ""
+}

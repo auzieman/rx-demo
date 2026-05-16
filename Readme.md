@@ -138,6 +138,7 @@ Provisioned dashboards:
 - `Rx Overview`
 - `Rx Service Flow`
 - `Rx Executive Health`
+- `Rx Executive Flow`
 - `Rx Tempo Traces`
 
 The executive dashboard uses component health gauges emitted by the services:
