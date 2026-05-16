@@ -12,6 +12,8 @@ refreshing dashboards around the new fault and health behavior.
 - Transport-neutral message validation
 - Updated load-generation fault defaults
 - Tempo local-blocks configuration for TraceQL metric panels
+- Direct RabbitMQ declares the existing lab exchanges as `fanout` for
+  compatibility with the original MassTransit-created broker topology.
 
 Build verification:
 

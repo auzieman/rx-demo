@@ -86,8 +86,11 @@ public static class RabbitMqTopologySetup
         var commandsQueue = config["Messaging:QueueName"] ?? RabbitMqTopology.DefaultCommandsQueue;
         var eventsQueue = config["Messaging:EventsQueue"] ?? RabbitMqTopology.DefaultEventsQueue;
 
-        channel.ExchangeDeclare(RabbitMqTopology.CommandsExchange, ExchangeType.Direct, durable: true, autoDelete: false);
-        channel.ExchangeDeclare(RabbitMqTopology.EventsExchange, ExchangeType.Direct, durable: true, autoDelete: false);
+        // MassTransit originally created these as fanout exchanges. Keep that
+        // topology so existing lab brokers can roll forward without deleting
+        // exchanges or losing queued demo messages.
+        channel.ExchangeDeclare(RabbitMqTopology.CommandsExchange, ExchangeType.Fanout, durable: true, autoDelete: false);
+        channel.ExchangeDeclare(RabbitMqTopology.EventsExchange, ExchangeType.Fanout, durable: true, autoDelete: false);
 
         channel.QueueDeclare(commandsQueue, durable: true, exclusive: false, autoDelete: false);
         channel.QueueBind(commandsQueue, RabbitMqTopology.CommandsExchange, nameof(ApprovePrescriptionCommand));
