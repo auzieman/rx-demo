@@ -28,6 +28,16 @@ docker compose --profile load up -d loadgen
 docker compose logs -f loadgen
 ```
 
+The load generator defaults to a bounded synthetic ID pool and light fault
+injection. Override these when you need a different test shape:
+
+```bash
+LOADGEN_RX_ID_POOL_SIZE=250 \
+LOADGEN_FAULT_PROFILE=moderate \
+LOADGEN_DURATION_SECONDS=600 \
+docker compose --profile load up -d loadgen
+```
+
 ## Kubernetes
 
 ```bash

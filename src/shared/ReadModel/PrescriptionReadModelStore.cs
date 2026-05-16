@@ -22,10 +22,14 @@ public sealed class PrescriptionReadModelStore
     private const string KeyPrefix = "rx:";
 
     private readonly ConnectionMultiplexer _mux;
+    private readonly int _maxItems;
 
     public PrescriptionReadModelStore(IConfiguration cfg)
     {
         _mux = ConnectionMultiplexer.Connect(cfg["Cache:Redis"] ?? "localhost:6379");
+        _maxItems = int.TryParse(cfg["ReadModel:MaxItems"], out var maxItems)
+            ? Math.Max(0, maxItems)
+            : 500;
     }
 
     public async Task UpsertAsync(PrescriptionReadModel model, TimeSpan ttl)
@@ -36,6 +40,7 @@ public sealed class PrescriptionReadModelStore
 
         await db.StringSetAsync(key, json, ttl);
         await db.SortedSetAddAsync(IndexKey, model.RxId, model.ChangedAt.ToUnixTimeMilliseconds());
+        await TrimAsync(db);
     }
 
     public async Task<PrescriptionReadModel?> GetAsync(string rxId)
@@ -94,6 +99,29 @@ public sealed class PrescriptionReadModelStore
 
         var total = await db.SortedSetLengthAsync(IndexKey);
         return new PrescriptionListPage(items, total, safePage, safePageSize);
+    }
+
+    private async Task TrimAsync(IDatabase db)
+    {
+        if (_maxItems <= 0)
+            return;
+
+        var total = await db.SortedSetLengthAsync(IndexKey);
+        var removeCount = total - _maxItems;
+        if (removeCount <= 0)
+            return;
+
+        var staleIds = await db.SortedSetRangeByRankAsync(IndexKey, 0, removeCount - 1, Order.Ascending);
+        if (staleIds.Length == 0)
+            return;
+
+        foreach (var id in staleIds)
+        {
+            if (id.HasValue)
+                await db.KeyDeleteAsync(GetKey(id!));
+        }
+
+        await db.SortedSetRemoveAsync(IndexKey, staleIds);
     }
 
     public async Task PingAsync()

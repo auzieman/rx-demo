@@ -52,3 +52,21 @@ spec:
               value: "1800"
             - name: WORKERS
               value: "4"
+            - name: CLIENT_TIMEOUT_SECONDS
+              value: "10"
+            - name: RX_ID_PREFIX
+              value: "RX-DEMO"
+            - name: RX_ID_POOL_SIZE
+              value: "500"
+            - name: MIX_READ
+              value: "0.20"
+            - name: MIX_APPROVE
+              value: "0.40"
+            - name: MIX_REFILL
+              value: "0.40"
+            - name: FAULT_PROFILE
+              value: "light"
+            - name: FAULT_MODES
+              value: "worker-transient-once,api-slow,projection-timeout"
+            - name: PROGRESS_INTERVAL_SECONDS
+              value: "30"

@@ -35,16 +35,26 @@ HEALTH_ERROR_PENALTY = float(os.getenv("HEALTH_ERROR_PENALTY", "15"))
 RPS = int(os.getenv("RPS", "2"))
 DURATION = int(os.getenv("DURATION_SECONDS", "0"))
 WORKERS = int(os.getenv("WORKERS", "4"))
+CLIENT_TIMEOUT_SECONDS = float(os.getenv("CLIENT_TIMEOUT_SECONDS", "10"))
+RX_ID_PREFIX = os.getenv("RX_ID_PREFIX", "RX-DEMO")
+RX_ID_POOL_SIZE = int(os.getenv("RX_ID_POOL_SIZE", "500"))
 MIX_READ = float(os.getenv("MIX_READ", "0.20"))
 MIX_APPROVE = float(os.getenv("MIX_APPROVE", "0.40"))
 MIX_REFILL = float(os.getenv("MIX_REFILL", "0.40"))
-FAULT_RATE = float(os.getenv("FAULT_RATE", "0.0"))
+FAULT_PROFILE = os.getenv("FAULT_PROFILE", "light").strip().lower()
+DEFAULT_FAULT_RATE = {
+    "off": "0.0",
+    "light": "0.02",
+    "moderate": "0.05",
+    "aggressive": "0.15",
+}.get(FAULT_PROFILE, "0.02")
+FAULT_RATE = float(os.getenv("FAULT_RATE") or DEFAULT_FAULT_RATE)
 PROGRESS_INTERVAL_SECONDS = int(os.getenv("PROGRESS_INTERVAL_SECONDS", "30"))
 FAULT_MODES = [
     item.strip()
     for item in os.getenv(
         "FAULT_MODES",
-        "worker-transient-once,projection-fail,cache-fail,api-slow",
+        "worker-transient-once,api-slow,projection-timeout",
     ).split(",")
     if item.strip()
 ]
@@ -143,11 +153,14 @@ _lock = threading.Lock()
 
 
 def _rx_id():
-    """Generate a sequential prescription ID."""
+    """Generate a bounded synthetic prescription ID by default."""
     global _counter
+    if RX_ID_POOL_SIZE > 0:
+        return f"{RX_ID_PREFIX}-{random.randint(1, RX_ID_POOL_SIZE):06d}"
+
     with _lock:
         _counter += 1
-        return f"RX-{_counter:06d}"
+        return f"{RX_ID_PREFIX}-{_counter:06d}"
 
 
 def _random_user():
@@ -172,7 +185,7 @@ def log_event(event_name, **fields):
     print(json.dumps(payload, sort_keys=True), flush=True)
 
 
-def record_result(operation, rx_id, started_at, status_code=None, outcome="ok", error_type=None):
+def record_result(operation, rx_id, started_at, status_code=None, outcome="ok", error_type=None, fault_mode=None):
     duration_ms = (time.perf_counter() - started_at) * 1000.0
     attrs = {
         "operation": operation,
@@ -180,6 +193,8 @@ def record_result(operation, rx_id, started_at, status_code=None, outcome="ok", 
     }
     if status_code is not None:
         attrs["status_code"] = str(status_code)
+    if fault_mode:
+        attrs["fault_mode"] = fault_mode
 
     request_counter.add(1, attrs)
     request_duration.record(duration_ms, attrs)
@@ -204,6 +219,7 @@ def record_result(operation, rx_id, started_at, status_code=None, outcome="ok", 
             "result": outcome,
             "duration.ms": round(duration_ms, 2),
             "error.type": error_type,
+            "fault.mode": fault_mode,
         }
     )
 
@@ -248,51 +264,57 @@ def do_read():
     rx = _rx_id()
     fault_mode = maybe_fault_mode("read")
     started_at = time.perf_counter()
-    with tracer.start_as_current_span("loadgen.read"):
+    with tracer.start_as_current_span("loadgen.read") as span:
+        if fault_mode:
+            span.set_attribute("fault.mode", fault_mode)
         try:
             params = {"faultMode": fault_mode} if fault_mode else None
-            r = session.get(f"{BASE_URL}/prescriptions/{rx}", params=params, timeout=5)
+            r = session.get(f"{BASE_URL}/prescriptions/{rx}", params=params, timeout=CLIENT_TIMEOUT_SECONDS)
             r.raise_for_status()
-            record_result("read", rx, started_at, status_code=r.status_code)
+            record_result("read", rx, started_at, status_code=r.status_code, fault_mode=fault_mode)
         except Exception as exc:
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
-            record_result("read", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__)
+            record_result("read", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__, fault_mode=fault_mode)
 
 
 def do_approve():
     rx = _rx_id()
     fault_mode = maybe_fault_mode("approve")
     started_at = time.perf_counter()
-    with tracer.start_as_current_span("loadgen.approve"):
+    with tracer.start_as_current_span("loadgen.approve") as span:
+        if fault_mode:
+            span.set_attribute("fault.mode", fault_mode)
         try:
             r = session.post(
                 f"{BASE_URL}/prescriptions/{rx}/approve",
                 json={"approvedBy": _random_user(), "notes": "loadgen", "faultMode": fault_mode},
-                timeout=5,
+                timeout=CLIENT_TIMEOUT_SECONDS,
             )
             r.raise_for_status()
-            record_result("approve", rx, started_at, status_code=r.status_code)
+            record_result("approve", rx, started_at, status_code=r.status_code, fault_mode=fault_mode)
         except Exception as exc:
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
-            record_result("approve", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__)
+            record_result("approve", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__, fault_mode=fault_mode)
 
 
 def do_refill():
     rx = _rx_id()
     fault_mode = maybe_fault_mode("refill")
     started_at = time.perf_counter()
-    with tracer.start_as_current_span("loadgen.refill"):
+    with tracer.start_as_current_span("loadgen.refill") as span:
+        if fault_mode:
+            span.set_attribute("fault.mode", fault_mode)
         try:
             r = session.post(
                 f"{BASE_URL}/prescriptions/{rx}/refill",
                 json={"refillCount": 1, "faultMode": fault_mode},
-                timeout=5,
+                timeout=CLIENT_TIMEOUT_SECONDS,
             )
             r.raise_for_status()
-            record_result("refill", rx, started_at, status_code=r.status_code)
+            record_result("refill", rx, started_at, status_code=r.status_code, fault_mode=fault_mode)
         except Exception as exc:
             status_code = getattr(getattr(exc, "response", None), "status_code", None)
-            record_result("refill", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__)
+            record_result("refill", rx, started_at, status_code=status_code, outcome="error", error_type=type(exc).__name__, fault_mode=fault_mode)
 
 
 def pick_action():
@@ -322,9 +344,13 @@ def main():
         rps=RPS,
         duration_seconds=DURATION,
         workers=WORKERS,
+        client_timeout_seconds=CLIENT_TIMEOUT_SECONDS,
+        rx_id_prefix=RX_ID_PREFIX,
+        rx_id_pool_size=RX_ID_POOL_SIZE,
         mix_read=round(MIX_READ / total_mix, 2),
         mix_approve=round(MIX_APPROVE / total_mix, 2),
         mix_refill=round(MIX_REFILL / total_mix, 2),
+        fault_profile=FAULT_PROFILE,
         fault_rate=FAULT_RATE,
         fault_modes=FAULT_MODES,
     )

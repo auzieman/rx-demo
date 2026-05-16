@@ -184,6 +184,7 @@ services:
       Messaging__QueueName: "rx.commands"
       Messaging__EventsQueue: "rx.events"
       Cache__Redis: "redis:6379"
+      ReadModel__MaxItems: "${READ_MODEL_MAX_ITEMS:-500}"
       Otel__Endpoint: "http://${OTEL_COLLECTOR_SERVICE:-otel-collector}:4318"
       Otel__ServiceNamespace: "rx"
       Otel__Environment: "${Otel__Environment:-dev}"
@@ -241,6 +242,7 @@ services:
     env_file: .env
     environment:
       Cache__Redis: "redis:6379"
+      ReadModel__MaxItems: "${READ_MODEL_MAX_ITEMS:-500}"
       Messaging__HostName: "rabbitmq"
       Messaging__VirtualHost: "/"
       Messaging__Port: "5672"
@@ -301,11 +303,15 @@ services:
       HEALTH_ERROR_PENALTY: "15"
       RPS: "${LOADGEN_RPS:-2}"
       DURATION_SECONDS: "${LOADGEN_DURATION_SECONDS:-0}"
+      CLIENT_TIMEOUT_SECONDS: "${LOADGEN_CLIENT_TIMEOUT_SECONDS:-10}"
+      RX_ID_PREFIX: "${LOADGEN_RX_ID_PREFIX:-RX-DEMO}"
+      RX_ID_POOL_SIZE: "${LOADGEN_RX_ID_POOL_SIZE:-500}"
       MIX_READ: "${LOADGEN_MIX_READ:-0.20}"
       MIX_APPROVE: "${LOADGEN_MIX_APPROVE:-0.40}"
       MIX_REFILL: "${LOADGEN_MIX_REFILL:-0.40}"
-      FAULT_RATE: "${LOADGEN_FAULT_RATE:-0.00}"
-      FAULT_MODES: "${LOADGEN_FAULT_MODES:-worker-transient-once,projection-fail,cache-fail,api-slow}"
+      FAULT_PROFILE: "${LOADGEN_FAULT_PROFILE:-light}"
+      FAULT_RATE: "${LOADGEN_FAULT_RATE:-}"
+      FAULT_MODES: "${LOADGEN_FAULT_MODES:-worker-transient-once,api-slow,projection-timeout}"
       WORKERS: "${LOADGEN_WORKERS:-4}"
       PROGRESS_INTERVAL_SECONDS: "${LOADGEN_PROGRESS_INTERVAL_SECONDS:-30}"
     depends_on:

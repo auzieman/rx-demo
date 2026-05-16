@@ -91,6 +91,29 @@ Useful endpoints:
 - OTLP HTTP: `http://localhost:4318`
 - Collector metrics: `http://localhost:9464/metrics`
 
+## Load Generation
+
+The synthetic load generator reuses a bounded pool of prescription IDs by
+default, so repeated demo runs update existing records instead of creating an
+unbounded list:
+
+```bash
+LOADGEN_RX_ID_POOL_SIZE=500 \
+LOADGEN_FAULT_PROFILE=light \
+docker compose --profile load up -d loadgen
+```
+
+Useful controls:
+
+- `LOADGEN_RX_ID_POOL_SIZE`: number of synthetic IDs to reuse. Set `0` for an unbounded sequential stream.
+- `LOADGEN_FAULT_PROFILE`: `off`, `light`, `moderate`, or `aggressive`.
+- `LOADGEN_FAULT_RATE`: explicit override for the selected profile.
+- `LOADGEN_FAULT_MODES`: comma-separated allowed fault modes.
+- `LOADGEN_CLIENT_TIMEOUT_SECONDS`: client timeout; keep it above `api-slow` delay when slow calls should complete.
+- `READ_MODEL_MAX_ITEMS`: max Redis read-model rows retained for list views.
+
+The default light fault set is `worker-transient-once,api-slow,projection-timeout`.
+
 ## Local Observability
 
 Run Grafana, Prometheus, Loki, Tempo, and Promtail locally:

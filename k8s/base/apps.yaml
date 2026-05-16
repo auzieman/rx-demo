@@ -61,6 +61,8 @@ spec:
                 configMapKeyRef:
                   name: rx-demo-config
                   key: REDIS_ENDPOINT
+            - name: ReadModel__MaxItems
+              value: "500"
             - name: Otel__Endpoint
               valueFrom:
                 configMapKeyRef:
@@ -206,6 +208,8 @@ spec:
                 configMapKeyRef:
                   name: rx-demo-config
                   key: REDIS_ENDPOINT
+            - name: ReadModel__MaxItems
+              value: "500"
             - name: Messaging__HostName
               valueFrom:
                 configMapKeyRef:
