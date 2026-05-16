@@ -7,24 +7,24 @@
 
   <ItemGroup>
     <!-- Messaging -->
-    <PackageReference Include="MassTransit" Version="8.2.4" />
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
 
     <!-- OpenTelemetry core + hosting -->
-    <PackageReference Include="OpenTelemetry" Version="1.15.1" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
 
     <!-- Exporters -->
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
 
     <!-- Instrumentations (pinned to what’s available) -->
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
 
     <!-- Optional Microsoft console logger (not the same as OTel log exporter) -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.8" />
     <PackageReference Include="StackExchange.Redis" Version="2.*" />
   </ItemGroup>
 </Project>

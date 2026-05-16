@@ -10,7 +10,6 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Instrumentation.AspNetCore; // for AddAspNetCoreInstrumentation
-using MassTransit.Logging;
 using Shared.Telemetry;
 
 
@@ -47,9 +46,7 @@ namespace Shared.Observability
                     }))
                 .WithTracing(t =>
                 {
-                    // MassTransit ActivitySource (hardcode name to avoid version-dependent alias)
-                    t.AddSource("MassTransit")
-                     .SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(ratio)))
+                    t.SetSampler(new ParentBasedSampler(new TraceIdRatioBasedSampler(ratio)))
                      .AddAspNetCoreInstrumentation()        // server spans (remove if not needed)
                      .AddHttpClientInstrumentation()
                      .AddSqlClientInstrumentation(opt =>
@@ -71,7 +68,6 @@ namespace Shared.Observability
                 .WithMetrics(m =>
                 {
                     m.AddMeter("rx.meter")
-                     .AddMeter("MassTransit")
                      .AddHttpClientInstrumentation()
                      .AddRuntimeInstrumentation()
                      .AddView("rx.api.requests_total", new MetricStreamConfiguration { TagKeys = new[] { "route", "method", "result" }})

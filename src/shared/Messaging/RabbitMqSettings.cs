@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Configuration;
+using RabbitMQ.Client;
 
 namespace Shared.Messaging;
 
@@ -16,6 +17,18 @@ public sealed record RabbitMqSettings(
         config["Messaging:VirtualHost"] ?? "/",
         config["Messaging:Username"] ?? "guest",
         config["Messaging:Password"] ?? "guest");
+
+    public ConnectionFactory CreateConnectionFactory() => new()
+    {
+        HostName = HostName,
+        Port = Port,
+        VirtualHost = VirtualHost,
+        UserName = Username,
+        Password = Password,
+        DispatchConsumersAsync = true,
+        AutomaticRecoveryEnabled = true,
+        TopologyRecoveryEnabled = true
+    };
 }
 
 public static class RabbitMqDependencyCheck

@@ -36,8 +36,8 @@ flowchart LR
 ## Services
 
 - `api-gateway`: ASP.NET Minimal API for prescription lookup, approval, refill, health, and demo fault modes.
-- `legacy-sync-worker`: RabbitMQ command consumer that writes the SQL Server transactional model and publishes domain events.
-- `read-model-projection`: RabbitMQ event consumer that updates the Redis read model.
+- `legacy-sync-worker`: Direct RabbitMQ command consumer that writes the SQL Server transactional model and publishes domain events.
+- `read-model-projection`: Direct RabbitMQ event consumer that updates the Redis read model.
 - `rx-ui`: ASP.NET Razor UI for simple operator-style interactions.
 - `loadgen`: Synthetic traffic generator with structured JSON logs and OpenTelemetry spans/metrics.
 - `otel-collector`: Receives OTLP logs, metrics, and traces from the demo services.
@@ -60,6 +60,10 @@ Stored procedures:
 All identifiers are synthetic. The demo uses generated `RX-...` values and does not contain real personal or medical records.
 
 ## Local Run
+
+The repo includes both `rx-demo.sln` and `rx-demo.slnx`. Use the classic
+solution for broad IDE compatibility, or the `.slnx` file with newer .NET
+tooling.
 
 Create a local `.env` file from the sample and fill in local-only credentials:
 
@@ -106,13 +110,16 @@ docker compose --profile load up -d loadgen
 Useful controls:
 
 - `LOADGEN_RX_ID_POOL_SIZE`: number of synthetic IDs to reuse. Set `0` for an unbounded sequential stream.
-- `LOADGEN_FAULT_PROFILE`: `off`, `light`, `moderate`, or `aggressive`.
+- `LOADGEN_FAULT_PROFILE`: `off`, `light`, `moderate`, or `aggressive`. The built-in rates are 0%, 4%, 10%, and 25%.
 - `LOADGEN_FAULT_RATE`: explicit override for the selected profile.
 - `LOADGEN_FAULT_MODES`: comma-separated allowed fault modes.
 - `LOADGEN_CLIENT_TIMEOUT_SECONDS`: client timeout; keep it above `api-slow` delay when slow calls should complete.
 - `READ_MODEL_MAX_ITEMS`: max Redis read-model rows retained for list views.
 
-The default light fault set is `worker-transient-once,api-slow,projection-timeout`.
+The default light fault set is
+`api-slow,api-error,worker-transient-once,worker-fail,projection-timeout,projection-fail,cache-fail`.
+Fault selection is weighted toward slow calls and transient worker retries so
+dashboards show realistic degradation before hard failures dominate the run.
 
 ## Local Observability
 
@@ -158,6 +165,10 @@ demo include:
 { resource.service.namespace = "rx" } | rate() by (resource.service.name)
 { resource.service.namespace = "rx" } | quantile_over_time(span:duration, .95) by (resource.service.name)
 ```
+
+TraceQL metric panels require Tempo's `local-blocks` metrics-generator
+processor. The bundled `collector/tempo.yml` enables it with separate
+generator WAL paths for metrics and trace-local blocks.
 
 ## Kubernetes
 

@@ -311,7 +311,7 @@ services:
       MIX_REFILL: "${LOADGEN_MIX_REFILL:-0.40}"
       FAULT_PROFILE: "${LOADGEN_FAULT_PROFILE:-light}"
       FAULT_RATE: "${LOADGEN_FAULT_RATE:-}"
-      FAULT_MODES: "${LOADGEN_FAULT_MODES:-worker-transient-once,api-slow,projection-timeout}"
+      FAULT_MODES: "${LOADGEN_FAULT_MODES:-api-slow,api-error,worker-transient-once,worker-fail,projection-timeout,projection-fail,cache-fail}"
       WORKERS: "${LOADGEN_WORKERS:-4}"
       PROGRESS_INTERVAL_SECONDS: "${LOADGEN_PROGRESS_INTERVAL_SECONDS:-30}"
     depends_on:

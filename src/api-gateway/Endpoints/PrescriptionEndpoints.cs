@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using MassTransit;
 using Shared.Messaging;
 using Shared.Observability;
 using Shared.ReadModel;
@@ -113,7 +112,7 @@ public static class PrescriptionEndpoints
     private static async Task<IResult> ApprovePrescriptionAsync(
         string rxId,
         ApprovePayload payload,
-        IPublishEndpoint bus,
+        IRabbitMqPublisher publisher,
         ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger("api");
@@ -132,14 +131,14 @@ public static class PrescriptionEndpoints
             if (string.IsNullOrWhiteSpace(payload.ApprovedBy))
                 return Results.BadRequest(new { error = "ApprovedBy required" });
 
-            await bus.Publish(new ApprovePrescriptionCommand(
+            await publisher.PublishAsync(RabbitMqTopology.CommandsExchange, new ApprovePrescriptionCommand(
                 rxId,
                 payload.ApprovedBy,
                 DateTimeOffset.UtcNow,
                 payload.Notes,
                 payload.FaultMode));
 
-            Metrics.RecordPublished("rx.commands", nameof(ApprovePrescriptionCommand));
+            Metrics.RecordPublished(RabbitMqTopology.CommandsExchange, nameof(ApprovePrescriptionCommand));
             logger.LogInformation("Approve command queued for {RxId}", rxId);
             return Results.Accepted($"/prescriptions/{rxId}", new { rxId, status = "ApproveQueued" });
         });
@@ -148,7 +147,7 @@ public static class PrescriptionEndpoints
     private static async Task<IResult> RefillPrescriptionAsync(
         string rxId,
         RefillPayload payload,
-        IPublishEndpoint bus,
+        IRabbitMqPublisher publisher,
         ILoggerFactory loggerFactory)
     {
         var logger = loggerFactory.CreateLogger("api");
@@ -167,13 +166,13 @@ public static class PrescriptionEndpoints
             if (payload.RefillCount < 1)
                 return Results.BadRequest(new { error = "RefillCount must be >= 1" });
 
-            await bus.Publish(new RefillRequestCommand(
+            await publisher.PublishAsync(RabbitMqTopology.CommandsExchange, new RefillRequestCommand(
                 rxId,
                 payload.RefillCount,
                 DateTimeOffset.UtcNow,
                 payload.FaultMode));
 
-            Metrics.RecordPublished("rx.commands", nameof(RefillRequestCommand));
+            Metrics.RecordPublished(RabbitMqTopology.CommandsExchange, nameof(RefillRequestCommand));
             logger.LogInformation("Refill command queued for {RxId}", rxId);
             return Results.Accepted($"/prescriptions/{rxId}", new { rxId, status = "RefillQueued" });
         });

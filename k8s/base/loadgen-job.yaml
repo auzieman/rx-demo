@@ -67,6 +67,6 @@ spec:
             - name: FAULT_PROFILE
               value: "light"
             - name: FAULT_MODES
-              value: "worker-transient-once,api-slow,projection-timeout"
+              value: "api-slow,api-error,worker-transient-once,worker-fail,projection-timeout,projection-fail,cache-fail"
             - name: PROGRESS_INTERVAL_SECONDS
               value: "30"

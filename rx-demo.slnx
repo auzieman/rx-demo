@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/api-gateway/api-gateway.csproj" />
+    <Project Path="src/legacy-sync-worker/legacy-sync-worker.csproj" />
+    <Project Path="src/read-model-projection/read-model-projection.csproj" />
+    <Project Path="src/shared/shared.csproj" />
+  </Folder>
+  <Folder Name="/src/rx-ui/">
+    <Project Path="src/rx-ui/Rx.Ui/Rx.Ui.csproj" />
+  </Folder>
+</Solution>

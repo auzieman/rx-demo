@@ -44,20 +44,35 @@ MIX_REFILL = float(os.getenv("MIX_REFILL", "0.40"))
 FAULT_PROFILE = os.getenv("FAULT_PROFILE", "light").strip().lower()
 DEFAULT_FAULT_RATE = {
     "off": "0.0",
-    "light": "0.02",
-    "moderate": "0.05",
-    "aggressive": "0.15",
-}.get(FAULT_PROFILE, "0.02")
+    # Light should be visible on executive dashboards without making every
+    # demo run look broken. At 2 RPS this is roughly five injected faults/min.
+    "light": "0.04",
+    # Moderate is useful for training: enough yellow/red movement to discuss
+    # SLO burn and component weighting, but still mostly successful traffic.
+    "moderate": "0.10",
+    "aggressive": "0.25",
+}.get(FAULT_PROFILE, "0.04")
 FAULT_RATE = float(os.getenv("FAULT_RATE") or DEFAULT_FAULT_RATE)
 PROGRESS_INTERVAL_SECONDS = int(os.getenv("PROGRESS_INTERVAL_SECONDS", "30"))
 FAULT_MODES = [
     item.strip()
     for item in os.getenv(
         "FAULT_MODES",
-        "worker-transient-once,api-slow,projection-timeout",
+        "api-slow,api-error,worker-transient-once,worker-fail,projection-timeout,projection-fail,cache-fail",
     ).split(",")
     if item.strip()
 ]
+FAULT_MODE_WEIGHTS = {
+    "api-slow": 3,
+    "api-error": 1,
+    "worker-transient-once": 4,
+    "worker-timeout": 1,
+    "worker-fail": 1,
+    "publish-fail": 1,
+    "projection-fail": 1,
+    "projection-timeout": 2,
+    "cache-fail": 1,
+}
 
 # ── OTel setup ───────────────────────────────────────────────────
 resource = Resource.create({
@@ -232,7 +247,7 @@ def maybe_fault_mode(operation):
         return None
 
     if operation == "read":
-        valid_modes = ["api-slow", "api-error"]
+        valid_modes = [mode for mode in FAULT_MODES if mode in {"api-slow", "api-error"}]
     elif operation in {"approve", "refill"}:
         valid_modes = [
             mode for mode in FAULT_MODES
@@ -257,7 +272,11 @@ def maybe_fault_mode(operation):
     with _stats_lock:
         _stats["faults"] += 1
 
-    return random.choice(valid_modes)
+    # The weights intentionally favor slow calls and transient worker retries.
+    # Those are common operational symptoms and make better training signals
+    # than a demo where most injected faults are hard 500s.
+    weights = [FAULT_MODE_WEIGHTS.get(mode, 1) for mode in valid_modes]
+    return random.choices(valid_modes, weights=weights, k=1)[0]
 
 
 def do_read():
