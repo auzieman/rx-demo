@@ -117,6 +117,17 @@ Short-term dashboard updates:
 - Start Kyverno examples in audit mode, review policy reports, then promote
   selected checks to enforce mode when the app and dependency images comply.
 
+## Telemetry Notes
+
+- Dashboard PromQL now matches the live k3s metric shape: queue labels use
+  `queue`, API success uses `result="ok"`, and loadgen latency uses
+  `rx_synthetic_duration_ms_milliseconds_*`.
+- Loki labels in the shared lab are service-name based for rx-demo
+  (`service_name="rx/api-gateway"` and similar), while local Docker Promtail
+  can still emit `compose_service` labels.
+- Collector exporter snippets for Dynatrace, Elasticsearch, and Datadog are
+  examples only and are not mounted into the active lab collector.
+
 Flow/Grafmaid ideas:
 
 - Use the README Mermaid graph as the source-of-truth service map.

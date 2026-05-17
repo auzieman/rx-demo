@@ -139,7 +139,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_queue_messages_total{destination=\"rx.commands\",direction=\"consume\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.commands\",direction=\"consume\",result=\"success\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -202,7 +202,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_message_publish_total{destination=\"rx.events\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.events\",result=\"success\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -265,7 +265,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_queue_messages_total{destination=\"rx.events\",direction=\"consume\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.events\",direction=\"consume\",result=\"success\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -440,21 +440,21 @@
         },
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_queue_messages_total{destination=\"rx.commands\",direction=\"consume\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.commands\",direction=\"consume\",result=\"success\"}[5m]))",
           "legendFormat": "Worker consume rx.commands",
           "range": true,
           "refId": "B"
         },
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_message_publish_total{destination=\"rx.events\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.events\",result=\"success\"}[5m]))",
           "legendFormat": "Worker publish rx.events",
           "range": true,
           "refId": "C"
         },
         {
           "editorMode": "code",
-          "expr": "sum(rate(rx_queue_messages_total{destination=\"rx.events\",direction=\"consume\",result=\"success\"}[5m]))",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.events\",direction=\"consume\",result=\"success\"}[5m]))",
           "legendFormat": "Projection consume rx.events",
           "range": true,
           "refId": "D"
@@ -519,7 +519,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "100 * sum(rate(rx_api_requests_total{result!=\"success\"}[5m])) / clamp_min(sum(rate(rx_api_requests_total[5m])), 0.001)",
+          "expr": "100 * sum(rate(rx_api_requests_total{result!=\"ok\"}[5m])) / clamp_min(sum(rate(rx_api_requests_total[5m])), 0.001)",
           "refId": "A"
         }
       ],
@@ -739,10 +739,10 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (destination, message_type, result) (increase(rx_queue_messages_total[15m]))",
+          "expr": "sum by (queue, message_type, result) (increase(rx_queue_messages_total[15m]))",
           "format": "table",
           "instant": true,
-          "legendFormat": "{{destination}} {{message_type}} {{result}}",
+          "legendFormat": "{{queue}} {{message_type}} {{result}}",
           "refId": "A"
         }
       ],
@@ -800,21 +800,21 @@
         },
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(rx_process_duration_ms_bucket{destination=\"rx.commands\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(rx_process_duration_ms_bucket{queue=\"rx.commands\"}[5m])) by (le))",
           "legendFormat": "Worker consume p95",
           "range": true,
           "refId": "B"
         },
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(rx_process_duration_ms_bucket{destination=\"rx.events\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(rx_process_duration_ms_bucket{queue=\"rx.events\"}[5m])) by (le))",
           "legendFormat": "Projection consume p95",
           "range": true,
           "refId": "C"
         },
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(rx_synthetic_duration_ms_bucket[5m])) by (le))",
+          "expr": "histogram_quantile(0.95, sum(rate(rx_synthetic_duration_ms_milliseconds_bucket[5m])) by (le))",
           "legendFormat": "Loadgen p95",
           "range": true,
           "refId": "D"
@@ -848,7 +848,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "{compose_service=\"api-gateway\"} | json",
+          "expr": "{service_name=\"rx/api-gateway\"} | json",
           "queryType": "range",
           "refId": "A"
         }
@@ -881,7 +881,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "{compose_service=\"legacy-sync-worker\"} | json",
+          "expr": "{service_name=\"rx/legacy-sync-worker\"} | json",
           "queryType": "range",
           "refId": "A"
         }
@@ -914,7 +914,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "{compose_service=\"read-model-projection\"} | json",
+          "expr": "{service_name=\"rx/read-model-projection\"} | json",
           "queryType": "range",
           "refId": "A"
         }

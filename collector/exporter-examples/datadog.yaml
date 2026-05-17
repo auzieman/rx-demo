@@ -1,0 +1,17 @@
+# Merge this into an OpenTelemetry Collector config to send traces, metrics,
+# and logs to Datadog.
+
+exporters:
+  datadog:
+    api:
+      key: "${DATADOG_API_KEY}"
+      site: "${DATADOG_SITE}"
+
+service:
+  pipelines:
+    traces:
+      exporters: [datadog, debug]
+    metrics:
+      exporters: [datadog, debug]
+    logs:
+      exporters: [datadog, debug]

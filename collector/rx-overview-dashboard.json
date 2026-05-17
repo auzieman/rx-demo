@@ -206,8 +206,8 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum by (destination, direction, result) (rate(rx_queue_messages_total[5m]))",
-          "legendFormat": "{{destination}} {{direction}} {{result}}",
+          "expr": "sum by (queue, direction, result) (rate(rx_queue_messages_total[5m]))",
+          "legendFormat": "{{queue}} {{direction}} {{result}}",
           "range": true,
           "refId": "A"
         }

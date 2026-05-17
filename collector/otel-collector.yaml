@@ -17,15 +17,6 @@ processors:
     metrics:
       datapoint:
         - 'attributes["queue"] == "dev-noisy"'
-  metricstransform/labels:
-    transforms:
-      - include: "^rx\\..*"
-        match_type: regexp
-        action: update
-        operations:
-          - action: update_label
-            label: queue
-            new_label: destination
 
 exporters:
   prometheus:
@@ -49,7 +40,7 @@ service:
       exporters: [otlphttp/tempo, debug]
     metrics:
       receivers: [otlp]
-      processors: [batch, filter/metrics, metricstransform/labels]
+      processors: [batch, filter/metrics]
       exporters: [prometheus, debug]
     logs:
       receivers: [otlp]

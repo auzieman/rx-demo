@@ -240,7 +240,7 @@
             "uid": "loki"
           },
           "editorMode": "code",
-          "expr": "{service_namespace=\"rx\"} | json | event_domain=\"rx\"",
+          "expr": "{service_name=~\"rx/.+\"} | json | event_domain=\"rx\"",
           "queryType": "range",
           "refId": "A"
         }

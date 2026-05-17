@@ -173,6 +173,10 @@ TraceQL metric panels require Tempo's `local-blocks` metrics-generator
 processor. The bundled `collector/tempo.yml` enables it with separate
 generator WAL paths for metrics and trace-local blocks.
 
+Collector exporter snippets for Dynatrace, Elasticsearch, and Datadog live in
+`collector/exporter-examples/`. They are reference configs only; the local and
+Kubernetes collectors still export to Prometheus, Loki, and Tempo by default.
+
 ## Kubernetes
 
 The active manifests live under `k8s/`.

@@ -1,0 +1,18 @@
+# Merge this into an OpenTelemetry Collector config to send traces, metrics,
+# and logs to Dynatrace through OTLP HTTP ingest.
+
+exporters:
+  otlphttp/dynatrace:
+    endpoint: "${DYNATRACE_OTLP_ENDPOINT}"
+    headers:
+      Authorization: "Api-Token ${DYNATRACE_API_TOKEN}"
+    compression: gzip
+
+service:
+  pipelines:
+    traces:
+      exporters: [otlphttp/dynatrace, debug]
+    metrics:
+      exporters: [otlphttp/dynatrace, debug]
+    logs:
+      exporters: [otlphttp/dynatrace, debug]

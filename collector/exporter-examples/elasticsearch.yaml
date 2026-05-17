@@ -1,0 +1,18 @@
+# Merge this into an OpenTelemetry Collector config to send telemetry to
+# Elasticsearch. The exact index/data stream mode should match the target
+# Elastic stack version and platform standards.
+
+exporters:
+  elasticsearch:
+    endpoints:
+      - "${ELASTIC_ENDPOINT}"
+    api_key: "${ELASTIC_API_KEY}"
+
+service:
+  pipelines:
+    traces:
+      exporters: [elasticsearch, debug]
+    metrics:
+      exporters: [elasticsearch, debug]
+    logs:
+      exporters: [elasticsearch, debug]
