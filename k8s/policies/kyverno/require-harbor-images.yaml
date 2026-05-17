@@ -1,0 +1,26 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: rx-demo-require-harbor-images
+  annotations:
+    policies.kyverno.io/title: Require Harbor Images
+    policies.kyverno.io/category: Supply Chain
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: images-from-harbor
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - rx-demo
+      validate:
+        message: "rx-demo workloads should pull images from the approved Harbor registry."
+        foreach:
+          - list: "request.object.spec.containers"
+            pattern:
+              image: "harbor.example.com/*"

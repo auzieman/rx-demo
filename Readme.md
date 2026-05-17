@@ -202,6 +202,21 @@ REGISTRY=rx-demo TAG=latest tools/build-and-push.sh
 
 Set `PUSH=1 REGISTRY=<registry-prefix>` to push images to a registry.
 
+For a Harbor-backed Tanzu-style cluster, use the separate overlay:
+
+```bash
+REGISTRY=harbor.example.com/rx-demo TAG=latest PUSH=1 tools/build-and-push.sh
+REGISTRY=harbor.example.com PROJECT=rx-demo TAG=latest \
+  STORAGE_CLASS=tanzu-storage-policy PULL_SECRET=harbor-registry \
+  tools/render-tanzu.sh > /tmp/rx-demo-tanzu.yaml
+kubectl apply -f /tmp/rx-demo-tanzu.yaml
+```
+
+The Tanzu overlay keeps services internal, rewrites workload and dependency
+images to Harbor paths, adds image pull secrets, sets resource requests and
+limits, and applies a baseline security context suitable for policy-enforced
+clusters. Optional Kyverno audit policies live under `k8s/policies/kyverno`.
+
 ## Repository Hygiene
 
 - No production credentials are committed.

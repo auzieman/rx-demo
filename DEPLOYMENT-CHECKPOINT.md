@@ -108,6 +108,15 @@ Short-term dashboard updates:
 - Add a "lab story" dashboard that is safe for executive viewing: platform
   status, demo service health, current traffic, and top degraded component.
 
+## Platform Deployment Backlog
+
+- Keep `k8s/overlays/lab` focused on the current k3s lab and use
+  `k8s/overlays/tanzu` for Harbor-backed, policy-aware Kubernetes clusters.
+- Tune the Tanzu overlay's Harbor registry, storage class, pull secret, and
+  observability endpoints per target cluster before applying.
+- Start Kyverno examples in audit mode, review policy reports, then promote
+  selected checks to enforce mode when the app and dependency images comply.
+
 Flow/Grafmaid ideas:
 
 - Use the README Mermaid graph as the source-of-truth service map.

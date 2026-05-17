@@ -1,0 +1,58 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: rx-demo-require-runtime-baseline
+  annotations:
+    policies.kyverno.io/title: Require Runtime Baseline
+    policies.kyverno.io/category: Pod Security
+    policies.kyverno.io/severity: medium
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: no-service-account-token
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - rx-demo
+      validate:
+        message: "rx-demo pods should not mount service account tokens unless explicitly needed."
+        pattern:
+          spec:
+            automountServiceAccountToken: false
+    - name: runtime-default-seccomp
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - rx-demo
+      validate:
+        message: "rx-demo pods should use the RuntimeDefault seccomp profile."
+        pattern:
+          spec:
+            securityContext:
+              seccompProfile:
+                type: RuntimeDefault
+    - name: drop-capabilities
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - rx-demo
+      validate:
+        message: "rx-demo containers should drop Linux capabilities and disallow privilege escalation."
+        foreach:
+          - list: "request.object.spec.containers"
+            pattern:
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop:
+                    - ALL

@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mssql
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: mssqldata
+      spec:
+        storageClassName: tanzu-storage-policy
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi

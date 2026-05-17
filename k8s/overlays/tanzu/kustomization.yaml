@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+patches:
+  - path: namespace-patch.yaml
+  - path: config-patch.yaml
+  - path: image-pull-secret-patch.yaml
+  - path: app-runtime-patch.yaml
+  - path: dependency-runtime-patch.yaml
+  - path: mssql-storage-patch.yaml
+  - path: otel-service-patch.yaml
+images:
+  - name: rx-demo/api-gateway
+    newName: harbor.example.com/rx-demo/api-gateway
+    newTag: latest
+  - name: rx-demo/legacy-sync-worker
+    newName: harbor.example.com/rx-demo/legacy-sync-worker
+    newTag: latest
+  - name: rx-demo/read-model-projection
+    newName: harbor.example.com/rx-demo/read-model-projection
+    newTag: latest
+  - name: rx-demo/rx-ui
+    newName: harbor.example.com/rx-demo/rx-ui
+    newTag: latest
+  - name: rx-demo/loadgen
+    newName: harbor.example.com/rx-demo/loadgen
+    newTag: latest
+  - name: rabbitmq
+    newName: harbor.example.com/library/rabbitmq
+    newTag: 3.12-management
+  - name: redis
+    newName: harbor.example.com/library/redis
+    newTag: 7-alpine
+  - name: mcr.microsoft.com/mssql/server
+    newName: harbor.example.com/mcr/mssql/server
+    newTag: 2022-latest
+  - name: otel/opentelemetry-collector-contrib
+    newName: harbor.example.com/otel/opentelemetry-collector-contrib
+    newTag: 0.103.0
