@@ -1,0 +1,445 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "targetBlank": false,
+      "title": "Executive Flow",
+      "tooltip": "Open weighted service flow",
+      "type": "dashboard",
+      "uid": "rx-executive-flow"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "targetBlank": false,
+      "title": "Tempo Traces",
+      "tooltip": "Open trace search dashboard",
+      "type": "dashboard",
+      "uid": "rx-tempo-traces"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 150
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "flowchart LR\n  classDef actor fill:#37474f,color:#fff,stroke:#102027,stroke-width:1px\n  classDef queue fill:#5d4037,color:#fff,stroke:#3e2723,stroke-width:1px\n  classDef store fill:#1565c0,color:#fff,stroke:#0d47a1,stroke-width:1px\n  classDef obs fill:#455a64,color:#fff,stroke:#263238,stroke-width:1px\n\n  ui[\"rx-ui<br/>UI -> API p95 ${__data.uiApiP95:display} ms\"]:::actor\n  api[\"api-gateway<br/>API p95 ${__data.apiP95:display} ms<br/>${__data.apiRps:display} req/s\"]:::actor\n  commands[(\"rx.commands<br/>publish ${__data.cmdPub:display}/s<br/>consume ${__data.cmdConsume:display}/s<br/>worker p95 ${__data.cmdP95:display} ms\")]:::queue\n  worker[\"legacy-sync-worker<br/>process p95 ${__data.workerP95:display} ms\"]:::actor\n  sql[(\"transactional SQL<br/>DB p95 ${__data.dbP95:display} ms\")]:::store\n  events[(\"rx.events<br/>publish ${__data.eventPub:display}/s<br/>consume ${__data.eventConsume:display}/s<br/>projection p95 ${__data.eventP95:display} ms\")]:::queue\n  projection[\"read-model-projection<br/>process p95 ${__data.projectionP95:display} ms\"]:::actor\n  redis[(\"Redis read model<br/>cache p95 ${__data.cacheP95:display} ms\")]:::store\n  grafana[\"Grafana / Prometheus<br/>map is metric-driven\"]:::obs\n\n  ui -->|HTTP calls| api\n  api -->|command publish| commands\n  commands -->|command consume| worker\n  worker -->|write model| sql\n  worker -->|event publish| events\n  events -->|event consume| projection\n  projection -->|cache writes| redis\n  api -->|read model lookups| redis\n\n  api -. metrics .-> grafana\n  worker -. metrics .-> grafana\n  projection -. metrics .-> grafana\n  ui -. metrics .-> grafana\n\n  style ui fill:${__data.uiApiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style api fill:${__data.apiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style commands fill:${__data.cmdP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style worker fill:${__data.workerP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style sql fill:${__data.dbP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px\n  style events fill:${__data.eventP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style projection fill:${__data.projectionP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style redis fill:${__data.cacheP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px",
+        "escapeSpecialChars": false,
+        "maxDataRows": 100
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "(histogram_quantile(0.95, sum by(le) (rate(http_client_request_duration_seconds_bucket{exported_job=\"rx/rx-ui\",server_address=\"api-gateway.rx-demo.svc.cluster.local\"}[$__rate_interval]))) * 1000) or vector(0)",
+          "legendFormat": "ui to api p95",
+          "range": true,
+          "refId": "uiApiP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_api_duration_ms_bucket[$__rate_interval]))) or vector(0)",
+          "legendFormat": "api p95",
+          "range": true,
+          "refId": "apiP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_api_requests_total[$__rate_interval])) or vector(0)",
+          "legendFormat": "api requests",
+          "range": true,
+          "refId": "apiRps"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.commands\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "command publish",
+          "range": true,
+          "refId": "cmdPub"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.commands\",direction=\"consume\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "command consume",
+          "range": true,
+          "refId": "cmdConsume"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_process_duration_ms_bucket{queue=\"rx.commands\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "command process p95",
+          "range": true,
+          "refId": "cmdP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_process_duration_ms_bucket{queue=\"rx.commands\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "worker p95",
+          "range": true,
+          "refId": "workerP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_db_duration_ms_bucket{result=\"success\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "db p95",
+          "range": true,
+          "refId": "dbP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.events\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "event publish",
+          "range": true,
+          "refId": "eventPub"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.events\",direction=\"consume\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "event consume",
+          "range": true,
+          "refId": "eventConsume"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_process_duration_ms_bucket{queue=\"rx.events\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "event process p95",
+          "range": true,
+          "refId": "eventP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_process_duration_ms_bucket{queue=\"rx.events\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "projection p95",
+          "range": true,
+          "refId": "projectionP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_cache_duration_ms_bucket{result=\"success\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "cache p95",
+          "range": true,
+          "refId": "cacheP95"
+        }
+      ],
+      "title": "Route Latency Traffic Map",
+      "type": "neildengg-grafmaid-panel"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 150
+              },
+              {
+                "color": "red",
+                "value": 500
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 18
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le, route) (rate(rx_api_duration_ms_bucket[$__rate_interval])))",
+          "legendFormat": "api {{route}}",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_db_duration_ms_bucket{result=\"success\"}[$__rate_interval])))",
+          "legendFormat": "db {{operation}}",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_cache_duration_ms_bucket{result=\"success\"}[$__rate_interval])))",
+          "legendFormat": "cache {{operation}}",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "P95 Latency by Route and Dependency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 18
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_api_requests_total[$__rate_interval]))",
+          "legendFormat": "api requests/sec",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.commands\"}[$__rate_interval]))",
+          "legendFormat": "command publish/sec",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.commands\",direction=\"consume\"}[$__rate_interval]))",
+          "legendFormat": "command consume/sec",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_message_publish_total{queue=\"rx.events\"}[$__rate_interval]))",
+          "legendFormat": "event publish/sec",
+          "range": true,
+          "refId": "D"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_queue_messages_total{queue=\"rx.events\",direction=\"consume\"}[$__rate_interval]))",
+          "legendFormat": "event consume/sec",
+          "range": true,
+          "refId": "E"
+        }
+      ],
+      "title": "Traffic Rates",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "rx-demo",
+    "grafmaid",
+    "traffic",
+    "latency"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Rx Traffic Map",
+  "uid": "rx-traffic-map",
+  "version": 1,
+  "weekStart": ""
+}

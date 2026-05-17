@@ -97,6 +97,8 @@ Short-term dashboard updates:
   `collector/rx-executive-flow-grafmaid-dashboard.json`.
 - Use `collector/rx-grafmaid-probe-dashboard.json` to validate query-driven
   Mermaid values and threshold colors before polishing the executive view.
+- Use `collector/rx-traffic-map-grafmaid-dashboard.json` for a route latency
+  traffic map across UI, API, RabbitMQ command/event queues, SQL, and Redis.
 - Add a direct RabbitMQ flow panel set: command publish, command consume,
   event publish, event consume, and projection cache writes.
 - Make executive health visibly explain its weighting: component weight,
