@@ -141,5 +141,8 @@ Infrastructure telemetry:
 - Swarm host/node telemetry should start with Docker and system stats.
 - Telegraf is a reasonable first pass for Swarm nodes because it can emit
   host, Docker, disk, network, and process metrics without changing app code.
-- k3s can stay app-focused for this pass; node telemetry can be added after
-  the direct RabbitMQ deployment is verified.
+- k3s host telemetry is now staged through
+  `k8s/observability/k3s-host-telemetry.yaml` and
+  `tools/deploy-k3s-host-telemetry.sh`.
+- Prometheus should scrape kube1/kube2 through `k3s-telegraf-hosts` on 9273
+  and `k3s-cadvisor` on 18080.

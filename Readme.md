@@ -221,6 +221,20 @@ images to Harbor paths, adds image pull secrets, sets resource requests and
 limits, and applies a baseline security context suitable for policy-enforced
 clusters. Optional Kyverno audit policies live under `k8s/policies/kyverno`.
 
+### k3s Host Telemetry
+
+The shared lab Grafana can see k3s app telemetry through the OTel collector.
+Host and container telemetry for kube1/kube2 is added separately with:
+
+```bash
+tools/deploy-k3s-host-telemetry.sh
+```
+
+That helper applies Telegraf and cAdvisor DaemonSets from
+`k8s/observability/k3s-host-telemetry.yaml`, opens the needed Fedora firewall
+ports, and adds Prometheus scrape jobs for kube1/kube2. The BKC stage outline
+is documented in `tools/pipelines/bkc-k3s-host-telemetry.md`.
+
 ## Repository Hygiene
 
 - No production credentials are committed.
