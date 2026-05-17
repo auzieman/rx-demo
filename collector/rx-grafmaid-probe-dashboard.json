@@ -1,0 +1,204 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "targetBlank": false,
+      "title": "Executive Flow",
+      "type": "dashboard",
+      "uid": "rx-executive-flow"
+    }
+  ],
+  "panels": [
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 18,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "content": "flowchart LR\n  api[\"API Gateway<br/>value: ${__data.apiHealth:display}<br/>fill: ${__data.apiHealth:color}\"]\n  worker[\"Sync Worker<br/>value: ${__data.workerHealth:display}<br/>fill: ${__data.workerHealth:color}\"]\n  projection[\"Projection<br/>value: ${__data.projectionHealth:display}<br/>fill: ${__data.projectionHealth:color}\"]\n  ui[\"UI<br/>value: ${__data.uiHealth:display}<br/>fill: ${__data.uiHealth:color}\"]\n\n  ui --> api --> worker --> projection\n\n  style api fill:${__data.apiHealth:color},color:#fff,stroke:#263238,stroke-width:2px\n  style worker fill:${__data.workerHealth:color},color:#fff,stroke:#263238,stroke-width:2px\n  style projection fill:${__data.projectionHealth:color},color:#fff,stroke:#263238,stroke-width:2px\n  style ui fill:${__data.uiHealth:color},color:#fff,stroke:#263238,stroke-width:2px",
+        "escapeSpecialChars": false,
+        "maxDataRows": 100
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max(rx_component_health_percent{component=\"api-gateway\"})",
+          "legendFormat": "apiHealth",
+          "range": true,
+          "refId": "apiHealth"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max(rx_component_health_percent{component=\"legacy-sync-worker\"})",
+          "legendFormat": "workerHealth",
+          "range": true,
+          "refId": "workerHealth"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max(rx_component_health_percent{component=\"read-model-projection\"})",
+          "legendFormat": "projectionHealth",
+          "range": true,
+          "refId": "projectionHealth"
+        },
+        {
+          "editorMode": "code",
+          "expr": "max(rx_component_health_percent{component=\"rx-ui\"})",
+          "legendFormat": "uiHealth",
+          "range": true,
+          "refId": "uiHealth"
+        }
+      ],
+      "title": "Grafmaid Query Color Probe",
+      "type": "neildengg-grafmaid-panel"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 0,
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 60
+              },
+              {
+                "color": "green",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.1.4",
+      "targets": [
+        {
+          "editorMode": "code",
+          "expr": "max by(component) (rx_component_health_percent)",
+          "legendFormat": "{{component}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Raw Component Health",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 39,
+  "tags": [
+    "rx-demo",
+    "grafmaid",
+    "probe"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Rx Grafmaid Probe",
+  "uid": "rx-grafmaid-probe",
+  "version": 1,
+  "weekStart": ""
+}
