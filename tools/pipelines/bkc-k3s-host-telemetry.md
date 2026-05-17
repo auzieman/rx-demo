@@ -1,7 +1,7 @@
-# BKC Pipeline: k3s Host Telemetry
+# BKC Pipeline: k3s Lab Housekeeping
 
-This is the intended BKC SSH lane for making the k3s nodes visible in the
-shared Grafana/Prometheus stack.
+This is the intended BKC SSH lane for keeping the k3s lab nodes aligned with
+the shared storage and observability stack.
 
 Targets:
 
@@ -15,9 +15,18 @@ Stages:
    Run on kube1:
    ```bash
    k3s kubectl get nodes -o wide
+   k3s kubectl wait --for=condition=Ready nodes --all --timeout=90s
    ```
 
-2. `apply-host-telemetry`
+2. `nfs-projects`
+   Mount shared project paths on kube1 and kube2:
+   ```text
+   192.168.1.10:/srv/nfs/swarm/shared -> /mnt/swarm/shared
+   192.168.1.10:/srv/nfs/swarm/tabor-linux-forge -> /mnt/swarm/tabor-linux-forge
+   192.168.1.10:/srv/nfs/swarm/blackknightcontroller -> /mnt/swarm/blackknightcontroller
+   ```
+
+3. `apply-host-telemetry`
    Apply `k8s/observability/k3s-host-telemetry.yaml` through kube1:
    ```bash
    k3s kubectl apply -f /tmp/k3s-host-telemetry.yaml
@@ -25,14 +34,23 @@ Stages:
    k3s kubectl -n rx-observability rollout status ds/cadvisor-k3s --timeout=180s
    ```
 
-3. `open-firewall`
+4. `apply-loki-logs`
+   Apply `k8s/observability/k3s-loki-logs.yaml` through kube1. This deploys
+   `promtail-k3s` and ships host logs as `job="k3s-hostlogs"` and pod logs as
+   `job="k3s-pods"`.
+
+5. `loadgen-steady`
+   Apply `k8s/observability/loadgen-deployment.yaml` through kube1. This keeps
+   `rx-loadgen` running as a Deployment instead of a one-shot Job.
+
+6. `open-firewall`
    Run on kube1 and kube2:
    ```bash
    firewall-cmd --add-port=9273/tcp --add-port=18080/tcp --permanent || true
    firewall-cmd --reload || true
    ```
 
-4. `prometheus-targets`
+7. `prometheus-targets`
    Ensure `/srv/stacks/monitoring/prometheus.yml` on swarm1 contains:
    ```yaml
      - job_name: k3s-telegraf-hosts
@@ -52,7 +70,7 @@ Stages:
    docker service update --force monitoring_prometheus
    ```
 
-5. `scrape-validate`
+8. `scrape-validate`
    Run on swarm1:
    ```bash
    curl -fsS http://127.0.0.1:9090/api/v1/targets \

@@ -7,14 +7,28 @@ KUBE1_TARGET="${KUBE1_TARGET:-192.168.1.14}"
 KUBE2_TARGET="${KUBE2_TARGET:-192.168.1.59}"
 PROMETHEUS_CONFIG="${PROMETHEUS_CONFIG:-/srv/stacks/monitoring/prometheus.yml}"
 MANIFEST="${MANIFEST:-k8s/observability/k3s-host-telemetry.yaml}"
+LOGS_MANIFEST="${LOGS_MANIFEST:-k8s/observability/k3s-loki-logs.yaml}"
+LOADGEN_MANIFEST="${LOADGEN_MANIFEST:-k8s/observability/loadgen-deployment.yaml}"
 
 if [[ ! -f "${MANIFEST}" ]]; then
   echo "Manifest not found: ${MANIFEST}" >&2
   exit 2
 fi
+if [[ ! -f "${LOGS_MANIFEST}" ]]; then
+  echo "Logs manifest not found: ${LOGS_MANIFEST}" >&2
+  exit 2
+fi
+if [[ ! -f "${LOADGEN_MANIFEST}" ]]; then
+  echo "Loadgen manifest not found: ${LOADGEN_MANIFEST}" >&2
+  exit 2
+fi
 
 ssh "${KUBE_SSH_HOST}" 'cat >/tmp/k3s-host-telemetry.yaml && k3s kubectl apply -f /tmp/k3s-host-telemetry.yaml' < "${MANIFEST}"
 ssh "${KUBE_SSH_HOST}" 'k3s kubectl -n rx-observability rollout status ds/telegraf-k3s-host --timeout=180s && k3s kubectl -n rx-observability rollout status ds/cadvisor-k3s --timeout=180s'
+ssh "${KUBE_SSH_HOST}" 'cat >/tmp/k3s-loki-logs.yaml && k3s kubectl apply -f /tmp/k3s-loki-logs.yaml' < "${LOGS_MANIFEST}"
+ssh "${KUBE_SSH_HOST}" 'k3s kubectl -n rx-observability rollout status ds/promtail-k3s --timeout=180s'
+ssh "${KUBE_SSH_HOST}" 'cat >/tmp/rx-loadgen-deployment.yaml && k3s kubectl apply -f /tmp/rx-loadgen-deployment.yaml' < "${LOADGEN_MANIFEST}"
+ssh "${KUBE_SSH_HOST}" 'k3s kubectl -n rx-demo rollout status deploy/loadgen --timeout=180s'
 
 for node in "${KUBE1_TARGET}" "${KUBE2_TARGET}"; do
   ssh "root@${node}" 'firewall-cmd --add-port=9273/tcp --add-port=18080/tcp --permanent 2>/dev/null || true; firewall-cmd --reload 2>/dev/null || true'

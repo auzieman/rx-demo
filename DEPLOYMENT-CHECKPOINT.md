@@ -144,5 +144,9 @@ Infrastructure telemetry:
 - k3s host telemetry is now staged through
   `k8s/observability/k3s-host-telemetry.yaml` and
   `tools/deploy-k3s-host-telemetry.sh`.
+- k3s log shipping is staged through `k8s/observability/k3s-loki-logs.yaml`
+  with Loki labels `job="k3s-hostlogs"` and `job="k3s-pods"`.
+- The lab load generator should run as the steady Deployment in
+  `k8s/observability/loadgen-deployment.yaml`, not as an expiring Job.
 - Prometheus should scrape kube1/kube2 through `k3s-telegraf-hosts` on 9273
   and `k3s-cadvisor` on 18080.
