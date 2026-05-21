@@ -1,4 +1,4 @@
-@page
+@page "{handler?}"
 @model IndexModel
 @{
     ViewData["Title"] = "Rx Demo UI";
@@ -64,9 +64,9 @@
               <input id="refill" asp-for="RefillCount" type="number" min="1" />
             </div>
             <div class="actions">
-              <button type="submit" asp-page-handler="Get">Lookup</button>
-              <button type="submit" asp-page-handler="Approve" class="secondary">Approve</button>
-              <button type="submit" asp-page-handler="Refill" class="tertiary">Refill</button>
+              <button type="submit" formaction="/lookup">Lookup</button>
+              <button type="submit" formaction="/approve" class="secondary">Approve</button>
+              <button type="submit" formaction="/refill" class="tertiary">Refill</button>
             </div>
           </form>
         </div>

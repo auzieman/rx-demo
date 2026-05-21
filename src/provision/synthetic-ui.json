@@ -32,6 +32,78 @@
           { "type": "contentMatch", "value": "Healthy" }
         ]
       }
+    },
+    {
+      "description": "POST UI lookup route",
+      "url": "{{UI_BASE_URL}}/lookup",
+      "method": "POST",
+      "requestTimeout": 10000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "type": "raw",
+        "content": "{\"rxId\":\"{{RX_ID}}\"}"
+      },
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": false
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "\"operation\":\"lookup\"" }
+        ]
+      }
+    },
+    {
+      "description": "POST UI approve route",
+      "url": "{{UI_BASE_URL}}/approve",
+      "method": "POST",
+      "requestTimeout": 10000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "type": "raw",
+        "content": "{\"rxId\":\"{{RX_ID}}\",\"approvedBy\":\"synthetic.user\",\"notes\":\"synthetic approve\"}"
+      },
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": false
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "\"operation\":\"approve\"" }
+        ]
+      }
+    },
+    {
+      "description": "POST UI refill route",
+      "url": "{{UI_BASE_URL}}/refill",
+      "method": "POST",
+      "requestTimeout": 10000,
+      "headers": [
+        { "name": "Content-Type", "value": "application/json" },
+        { "name": "Accept", "value": "application/json" }
+      ],
+      "body": {
+        "type": "raw",
+        "content": "{\"rxId\":\"{{RX_ID}}\",\"refillCount\":1}"
+      },
+      "configuration": {
+        "followRedirects": true,
+        "sensitiveData": false
+      },
+      "validation": {
+        "rules": [
+          { "type": "httpStatusCode", "value": "200" },
+          { "type": "contentMatch", "value": "\"operation\":\"refill\"" }
+        ]
+      }
     }
   ]
 }
