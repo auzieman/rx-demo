@@ -140,6 +140,13 @@ public static class PrescriptionEndpoints
 
             Metrics.RecordPublished(RabbitMqTopology.CommandsExchange, nameof(ApprovePrescriptionCommand));
             logger.LogInformation("Approve command queued for {RxId}", rxId);
+            logger.LogPrescriptionAudit(
+                "approve",
+                rxId,
+                payload.ApprovedBy,
+                "accepted",
+                ("messaging.exchange", RabbitMqTopology.CommandsExchange),
+                ("messaging.message_type", nameof(ApprovePrescriptionCommand)));
             return Results.Accepted($"/prescriptions/{rxId}", new { rxId, status = "ApproveQueued" });
         });
     }
@@ -174,6 +181,14 @@ public static class PrescriptionEndpoints
 
             Metrics.RecordPublished(RabbitMqTopology.CommandsExchange, nameof(RefillRequestCommand));
             logger.LogInformation("Refill command queued for {RxId}", rxId);
+            logger.LogPrescriptionAudit(
+                "refill",
+                rxId,
+                "rx-ui",
+                "accepted",
+                ("messaging.exchange", RabbitMqTopology.CommandsExchange),
+                ("messaging.message_type", nameof(RefillRequestCommand)),
+                ("refill.count", payload.RefillCount));
             return Results.Accepted($"/prescriptions/{rxId}", new { rxId, status = "RefillQueued" });
         });
     }
