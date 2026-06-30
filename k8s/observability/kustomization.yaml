@@ -1,0 +1,59 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - k3s-host-telemetry.yaml
+  - k3s-loki-logs.yaml
+  - k3s-telemetry-services.yaml
+  - loadgen-deployment.yaml
+  - grafana-stack.yaml
+generatorOptions:
+  disableNameSuffixHash: true
+configMapGenerator:
+  - name: prometheus-k3s-config
+    namespace: rx-observability
+    files:
+      - prometheus.yml=prometheus-k3s.yml
+  - name: loki-config
+    namespace: rx-observability
+    files:
+      - loki-config.yml=grafana/loki-config.yml
+  - name: tempo-config
+    namespace: rx-observability
+    files:
+      - tempo.yml=grafana/tempo.yml
+  - name: grafana-datasources
+    namespace: rx-observability
+    files:
+      - grafana-datasources.yml=grafana/grafana-datasources.yml
+  - name: grafana-dashboard-provider
+    namespace: rx-observability
+    files:
+      - grafana-dashboards.yml=grafana/grafana-dashboards.yml
+  - name: rx-overview-dashboard
+    namespace: rx-observability
+    files:
+      - rx-overview-dashboard.json=grafana/rx-overview-dashboard.json
+  - name: rx-service-flow-dashboard
+    namespace: rx-observability
+    files:
+      - rx-service-flow-dashboard.json=grafana/rx-service-flow-dashboard.json
+  - name: rx-executive-health-dashboard
+    namespace: rx-observability
+    files:
+      - rx-executive-health-dashboard.json=grafana/rx-executive-health-dashboard.json
+  - name: rx-executive-flow-grafmaid-dashboard
+    namespace: rx-observability
+    files:
+      - rx-executive-flow-grafmaid-dashboard.json=grafana/rx-executive-flow-grafmaid-dashboard.json
+  - name: rx-grafmaid-probe-dashboard
+    namespace: rx-observability
+    files:
+      - rx-grafmaid-probe-dashboard.json=grafana/rx-grafmaid-probe-dashboard.json
+  - name: rx-traffic-map-grafmaid-dashboard
+    namespace: rx-observability
+    files:
+      - rx-traffic-map-grafmaid-dashboard.json=grafana/rx-traffic-map-grafmaid-dashboard.json
+  - name: rx-tempo-traces-dashboard
+    namespace: rx-observability
+    files:
+      - rx-tempo-traces-dashboard.json=grafana/rx-tempo-traces-dashboard.json

@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../lab/
+  - ../../observability/
+patchesStrategicMerge:
+  - observability-endpoints-patch.yaml
+images:
+  - name: rx-demo/api-gateway
+    newName: swarm1.lab.auzietek.com:5001/rx-demo/api-gateway
+    newTag: 097889a
+  - name: rx-demo/legacy-sync-worker
+    newName: swarm1.lab.auzietek.com:5001/rx-demo/legacy-sync-worker
+    newTag: 097889a
+  - name: rx-demo/read-model-projection
+    newName: swarm1.lab.auzietek.com:5001/rx-demo/read-model-projection
+    newTag: 097889a
+  - name: rx-demo/rx-ui
+    newName: swarm1.lab.auzietek.com:5001/rx-demo/rx-ui
+    newTag: 097889a
+  - name: rx-demo/loadgen
+    newName: swarm1.lab.auzietek.com:5001/rx-demo/loadgen
+    newTag: 097889a

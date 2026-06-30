@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: telegraf-k3s-host
+  namespace: rx-observability
+  labels:
+    app.kubernetes.io/name: telegraf-k3s-host
+spec:
+  selector:
+    app.kubernetes.io/name: telegraf-k3s-host
+  ports:
+    - name: metrics
+      port: 9273
+      targetPort: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadvisor-k3s
+  namespace: rx-observability
+  labels:
+    app.kubernetes.io/name: cadvisor-k3s
+spec:
+  selector:
+    app.kubernetes.io/name: cadvisor-k3s
+  ports:
+    - name: metrics
+      port: 18080
+      targetPort: metrics

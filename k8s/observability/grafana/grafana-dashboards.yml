@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: Rx Demo Dashboards
+    orgId: 1
+    folder: Rx Demo
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /etc/grafana/provisioning/dashboards/json
