@@ -245,7 +245,8 @@
         }
       ],
       "title": "Recent Transactions",
-      "type": "table"
+      "type": "table",
+      "description": "Recent CloudEvent transaction ids; copy one into the Transaction Regex filter above to narrow the log and count panels."
     },
     {
       "datasource": {
@@ -282,7 +283,8 @@
         }
       ],
       "title": "CloudEvent Audit Log",
-      "type": "logs"
+      "type": "logs",
+      "description": "Raw Loki records filtered by Transaction Regex and Outcome Filter. Keep the time range tight if Loki is under load."
     }
   ],
   "refresh": "10s",
@@ -296,29 +298,19 @@
   "templating": {
     "list": [
       {
-        "allValue": ".*",
         "current": {
-          "selected": true,
-          "text": "All",
-          "value": "$__all"
+          "selected": false,
+          "text": ".*",
+          "value": ".*"
         },
-        "datasource": {
-          "type": "loki",
-          "uid": "loki"
-        },
-        "definition": "query_result(topk(25, sum by (rx_id) (count_over_time({service_name=~\"rx/.+\"} |= \"CloudEvent audit\" | regexp \"rxId=(?P<rx_id>RX[-A-Z0-9]+)\" [$__range]))))",
+        "description": "Regex filter for CloudEvent prescription/transaction id. Use .* for all, or RX-BKC-CLOUDEVENTS / RX-DEMO-000123 for one transaction.",
         "hide": 0,
-        "includeAll": true,
-        "label": "Transaction",
-        "multi": false,
+        "label": "Transaction Regex",
         "name": "rx_id",
         "options": [],
-        "query": "query_result(topk(25, sum by (rx_id) (count_over_time({service_name=~\"rx/.+\"} |= \"CloudEvent audit\" | regexp \"rxId=(?P<rx_id>RX[-A-Z0-9]+)\" [$__range]))))",
-        "refresh": 2,
-        "regex": "/rx_id=\"([^\"]+)\"/",
+        "query": ".*",
         "skipUrlSync": false,
-        "sort": 3,
-        "type": "query"
+        "type": "textbox"
       },
       {
         "allValue": ".*",
@@ -356,13 +348,13 @@
     ]
   },
   "time": {
-    "from": "now-30m",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
   "title": "Rx CloudEvents Audit",
   "uid": "rx-cloudevents",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
