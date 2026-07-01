@@ -68,7 +68,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
             - name: LOKI_ENDPOINT
-              value: http://swarm1.lab.auzietek.com:3100/loki/api/v1/push
+              value: http://loki.rx-observability.svc.cluster.local:3100/loki/api/v1/push
           ports:
             - name: http
               containerPort: 3101
