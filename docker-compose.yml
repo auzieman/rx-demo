@@ -164,6 +164,7 @@ services:
       - ./collector/rx-grafmaid-probe-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-grafmaid-probe-dashboard.json:ro
       - ./collector/rx-traffic-map-grafmaid-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-traffic-map-grafmaid-dashboard.json:ro
       - ./collector/rx-tempo-traces-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-tempo-traces-dashboard.json:ro
+      - ./collector/rx-cloudevents-dashboard.json:/etc/grafana/provisioning/dashboards/json/rx-cloudevents-dashboard.json:ro
     depends_on:
       loki:
         condition: service_started

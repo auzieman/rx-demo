@@ -57,3 +57,7 @@ configMapGenerator:
     namespace: rx-observability
     files:
       - rx-tempo-traces-dashboard.json=grafana/rx-tempo-traces-dashboard.json
+  - name: rx-cloudevents-dashboard
+    namespace: rx-observability
+    files:
+      - rx-cloudevents-dashboard.json=grafana/rx-cloudevents-dashboard.json

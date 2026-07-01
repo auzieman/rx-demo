@@ -291,6 +291,8 @@ spec:
                   name: rx-traffic-map-grafmaid-dashboard
               - configMap:
                   name: rx-tempo-traces-dashboard
+              - configMap:
+                  name: rx-cloudevents-dashboard
         - name: data
           emptyDir: {}
 ---

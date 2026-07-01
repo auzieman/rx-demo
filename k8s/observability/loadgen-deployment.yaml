@@ -50,7 +50,7 @@ spec:
             - name: HEALTH_ERROR_PENALTY
               value: "15"
             - name: RPS
-              value: "1"
+              value: "2"
             - name: DURATION_SECONDS
               value: "0"
             - name: WORKERS

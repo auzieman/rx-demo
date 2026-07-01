@@ -277,21 +277,21 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le, route) (rate(rx_api_duration_ms_bucket[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by(le, route) (rate(rx_api_duration_ms_bucket[$__rate_interval]))) or vector(0)",
           "legendFormat": "api {{route}}",
           "range": true,
           "refId": "A"
         },
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_db_duration_ms_bucket{result=\"success\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_db_duration_ms_bucket{result=\"success\"}[$__rate_interval]))) or vector(0)",
           "legendFormat": "db {{operation}}",
           "range": true,
           "refId": "B"
         },
         {
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_cache_duration_ms_bucket{result=\"success\"}[$__rate_interval])))",
+          "expr": "histogram_quantile(0.95, sum by(le, operation) (rate(rx_cache_duration_ms_bucket{result=\"success\"}[$__rate_interval]))) or vector(0)",
           "legendFormat": "cache {{operation}}",
           "range": true,
           "refId": "C"
