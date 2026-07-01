@@ -142,6 +142,11 @@ Provisioned dashboards:
 - `Rx Grafmaid Probe`
 - `Rx Traffic Map`
 - `Rx Tempo Traces`
+- `Rx CloudEvents Audit`
+
+Loki retention is intentionally short for demo environments: the bundled Loki
+configuration keeps log data for 24 hours. This keeps repeated rehearsal runs
+from making recent dashboard queries slower over time.
 
 The executive dashboard uses component health gauges emitted by the services:
 
