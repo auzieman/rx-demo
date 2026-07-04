@@ -108,6 +108,46 @@ app.MapGet("/readyz", async (RxApiClient api, ILoggerFactory loggerFactory, Canc
     }
 });
 
+app.MapPost("/browser-event", (
+    BrowserUiEvent browserEvent,
+    HttpContext httpContext,
+    ILoggerFactory loggerFactory,
+    CancellationToken cancellationToken) =>
+{
+    cancellationToken.ThrowIfCancellationRequested();
+    var logger = loggerFactory.CreateLogger("ui.browser");
+    var route = "/browser-event";
+    var name = string.IsNullOrWhiteSpace(browserEvent.Name) ? "ui.browser.event" : browserEvent.Name.Trim();
+    var page = string.IsNullOrWhiteSpace(browserEvent.Page) ? "Index" : browserEvent.Page.Trim();
+    var action = string.IsNullOrWhiteSpace(browserEvent.Action) ? null : browserEvent.Action.Trim();
+    var rxId = string.IsNullOrWhiteSpace(browserEvent.RxId) ? null : browserEvent.RxId.Trim();
+    var selectedCount = browserEvent.SelectedCount.GetValueOrDefault();
+    var durationMs = browserEvent.DurationMs.GetValueOrDefault();
+
+    using var scope = logger.BeginEventScope("rx", name,
+        ("ui.page", page),
+        ("ui.action", action),
+        ("ui.component", browserEvent.Component),
+        ("ui.selected_count", selectedCount),
+        ("ui.duration_ms", durationMs),
+        ("rx.id", rxId),
+        ("http.route", route),
+        ("browser.user_agent", httpContext.Request.Headers.UserAgent.ToString()),
+        ("client.ip", httpContext.Connection.RemoteIpAddress?.ToString()));
+
+    var detailCount = browserEvent.Details?.Count ?? 0;
+    logger.LogInformation(
+        "Browser UI event {EventName} action={Action} rxId={RxId} selected={SelectedCount} details={DetailCount}",
+        name,
+        action,
+        rxId,
+        selectedCount,
+        detailCount);
+
+    Metrics.RecordApiRequest(route, "POST", "ok", Math.Max(0, durationMs));
+    return Results.Accepted(route, new { status = "accepted", name });
+});
+
 app.MapRazorPages();
 
 app.Run();
@@ -145,3 +185,13 @@ public class RxApiClient
         => await _http.PostAsJsonAsync($"/prescriptions/{Uri.EscapeDataString(rxId)}/refill",
             new RefillPayload(refillCount), ct);
 }
+
+public sealed record BrowserUiEvent(
+    string? Name,
+    string? Page,
+    string? Component,
+    string? Action,
+    string? RxId,
+    int? SelectedCount,
+    double? DurationMs,
+    Dictionary<string, string>? Details);

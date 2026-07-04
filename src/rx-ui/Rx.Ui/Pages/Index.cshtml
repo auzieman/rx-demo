@@ -11,7 +11,7 @@
   <style>
     :root { color-scheme: light; }
     body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 2rem; background: #f3f6f8; color: #16303d; }
-    .shell { max-width: 960px; margin: 0 auto; background: #fff; border: 1px solid #d6e0e6; border-radius: 12px; box-shadow: 0 10px 30px rgba(27,44,58,.08); overflow: hidden; }
+    .shell { max-width: 1080px; margin: 0 auto; background: #fff; border: 1px solid #d6e0e6; border-radius: 12px; box-shadow: 0 10px 30px rgba(27,44,58,.08); overflow: hidden; }
     .hero { padding: 1.5rem 1.75rem; background: linear-gradient(135deg, #114b5f, #1a759f); color: #fff; }
     .content { padding: 1.5rem 1.75rem 2rem; }
     .grid { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
@@ -20,20 +20,29 @@
     .field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: 1rem; }
     label { font-weight: 600; }
     input, button { font-size: 1rem; padding: .65rem .75rem; border-radius: 8px; border: 1px solid #b9cbd6; }
+    input[type="checkbox"] { width: 1.05rem; height: 1.05rem; padding: 0; accent-color: #1a759f; }
     select { font-size: 1rem; padding: .65rem .75rem; border-radius: 8px; border: 1px solid #b9cbd6; background: #fff; }
     button { border: none; background: #1a759f; color: #fff; cursor: pointer; }
     button.secondary { background: #4f6d7a; }
     button.tertiary { background: #8d99ae; }
     .actions { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .button-sm { font-size: .9rem; padding: .45rem .6rem; border-radius: 7px; }
     .toolbar { display: flex; gap: 1rem; align-items: end; justify-content: space-between; flex-wrap: wrap; }
     .toolbar form { display: flex; gap: .75rem; align-items: end; flex-wrap: wrap; }
+    .selection-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0; padding: .75rem; border: 1px solid #d6e0e6; border-radius: 8px; background: #f7fafc; }
+    .selection-bar .actions { align-items: center; }
+    .selected-count { font-weight: 700; color: #114b5f; }
     .stats { display: flex; gap: 1rem; flex-wrap: wrap; }
     .stat { padding: .75rem 1rem; border-radius: 10px; background: #eef6fa; border: 1px solid #d6e0e6; min-width: 140px; }
     .stat strong { display: block; font-size: 1.35rem; }
     table { width: 100%; border-collapse: collapse; }
     th, td { text-align: left; padding: .75rem .6rem; border-bottom: 1px solid #dce6eb; }
     th { font-size: .92rem; color: #4f6d7a; text-transform: uppercase; letter-spacing: .04em; }
-    tr:hover td { background: #f4f9fb; }
+    tbody tr { cursor: pointer; }
+    tbody tr:hover td { background: #f4f9fb; }
+    tbody tr.selected td { background: #e8f4f8; }
+    td.select-cell, th.select-cell { width: 2.25rem; text-align: center; }
+    td.row-actions { white-space: nowrap; }
     .pill { display: inline-block; padding: .25rem .55rem; border-radius: 999px; background: #d8edf7; color: #114b5f; font-size: .85rem; }
     .state { padding: .85rem 1rem; border-radius: 8px; border: 1px solid #d6e0e6; background: #eef6fa; margin: 1rem 0; }
     .state.error { background: #fff3f3; border-color: #f0b5b5; color: #8a1f1f; }
@@ -42,7 +51,14 @@
     .pager button[disabled] { opacity: .5; cursor: default; }
     pre { background: #0f1720; color: #cfe8f3; padding: 1rem; border-radius: 10px; overflow-x: auto; min-height: 220px; }
     .hint { color: #506874; font-size: .95rem; margin: 0; }
-    @@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    @@media (max-width: 760px) {
+      body { margin: .75rem; }
+      .grid { grid-template-columns: 1fr; }
+      .selection-bar { align-items: stretch; flex-direction: column; }
+      table { font-size: .92rem; }
+      th, td { padding: .6rem .4rem; }
+      .hide-sm { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -66,7 +82,7 @@
             <div class="actions">
               <button type="submit" formaction="/lookup">Lookup</button>
               <button type="submit" formaction="/approve" class="secondary">Approve</button>
-              <button type="submit" formaction="/refill" class="tertiary">Refill</button>
+              <button type="submit" formaction="/refill" class="tertiary">Renew</button>
             </div>
           </form>
         </div>
@@ -111,6 +127,17 @@
               <strong>@(Model.ListPage?.PageSize ?? Model.PageSize)</strong>
             </div>
           </div>
+          <div class="selection-bar" data-selection-bar>
+            <div>
+              <span class="selected-count" data-selected-count>0 selected</span>
+              <p class="hint">Click a row to load it, or select multiple rows for a batch renew/approve pass.</p>
+            </div>
+            <div class="actions">
+              <button type="button" class="secondary button-sm" data-batch-action="lookup">Lookup</button>
+              <button type="button" class="secondary button-sm" data-batch-action="approve">Approve</button>
+              <button type="button" class="tertiary button-sm" data-batch-action="refill">Renew</button>
+            </div>
+          </div>
           @if (Model.HasListError)
           {
               <div class="state error">
@@ -128,10 +155,12 @@
           <table>
             <thead>
               <tr>
+                <th class="select-cell"><input type="checkbox" data-select-all aria-label="Select all prescriptions on this page" /></th>
                 <th>Rx ID</th>
                 <th>Status</th>
-                <th>Version</th>
+                <th class="hide-sm">Version</th>
                 <th>Changed</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -139,18 +168,23 @@
             {
                 foreach (var item in Model.ListPage!.Items)
                 {
-                    <tr>
+                    <tr data-rx-id="@item.RxId">
+                      <td class="select-cell"><input type="checkbox" class="row-select" value="@item.RxId" aria-label="Select @item.RxId" /></td>
                       <td><span class="pill">@item.RxId</span></td>
                       <td>@item.Status</td>
-                      <td>@item.Version</td>
+                      <td class="hide-sm">@item.Version</td>
                       <td>@item.ChangedAt.ToLocalTime().ToString("u")</td>
+                      <td class="row-actions">
+                        <button type="button" class="button-sm secondary" data-row-action="lookup">Open</button>
+                        <button type="button" class="button-sm tertiary" data-row-action="refill">Renew</button>
+                      </td>
                     </tr>
                 }
             }
             else
             {
                 <tr>
-                  <td colspan="4">No rows to display.</td>
+                  <td colspan="6">No rows to display.</td>
                 </tr>
             }
             </tbody>
@@ -175,9 +209,233 @@
       @if (!string.IsNullOrWhiteSpace(Model.Message))
       {
           <h3>Result</h3>
-          <pre>@Model.Message</pre>
+          <pre data-result-output>@Model.Message</pre>
+      }
+      else
+      {
+          <h3 data-result-title hidden>Result</h3>
+          <pre data-result-output hidden></pre>
       }
     </div>
   </div>
+  <script>
+    (() => {
+      const pageName = "Index";
+      const rxInput = document.getElementById("rx");
+      const refillInput = document.getElementById("refill");
+      const selectedCount = document.querySelector("[data-selected-count]");
+      const resultTitle = document.querySelector("[data-result-title]");
+      const resultOutput = document.querySelector("[data-result-output]");
+      const selectAll = document.querySelector("[data-select-all]");
+      const rowChecks = Array.from(document.querySelectorAll(".row-select"));
+      const rows = Array.from(document.querySelectorAll("tr[data-rx-id]"));
+
+      function selectedIds() {
+        return rowChecks.filter(check => check.checked).map(check => check.value);
+      }
+
+      function emitBrowserEvent(name, data = {}) {
+        const payload = {
+          name,
+          page: pageName,
+          component: data.component || "prescription-table",
+          action: data.action || null,
+          rxId: data.rxId || null,
+          selectedCount: data.selectedCount ?? selectedIds().length,
+          durationMs: data.durationMs || 0,
+          details: data.details || {}
+        };
+
+        const body = JSON.stringify(payload);
+        if (navigator.sendBeacon) {
+          const blob = new Blob([body], { type: "application/json" });
+          if (navigator.sendBeacon("/browser-event", blob)) {
+            return;
+          }
+        }
+
+        fetch("/browser-event", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body,
+          keepalive: true
+        }).catch(() => {});
+      }
+
+      function updateSelectionState() {
+        const ids = selectedIds();
+        if (selectedCount) {
+          selectedCount.textContent = `${ids.length} selected`;
+        }
+        rows.forEach(row => {
+          const check = row.querySelector(".row-select");
+          row.classList.toggle("selected", Boolean(check?.checked));
+        });
+        if (selectAll) {
+          selectAll.checked = rowChecks.length > 0 && ids.length === rowChecks.length;
+          selectAll.indeterminate = ids.length > 0 && ids.length < rowChecks.length;
+        }
+      }
+
+      function setActiveRx(rxId) {
+        if (rxInput) {
+          rxInput.value = rxId;
+        }
+      }
+
+      function showResult(text) {
+        if (!resultOutput) {
+          return;
+        }
+        if (resultTitle) {
+          resultTitle.hidden = false;
+        }
+        resultOutput.hidden = false;
+        resultOutput.textContent = text;
+      }
+
+      async function postOperation(action, rxId) {
+        const started = performance.now();
+        const payload = {
+          rxId,
+          refillCount: Number(refillInput?.value || 1),
+          approvedBy: "browser.operator",
+          notes: "browser table action"
+        };
+        emitBrowserEvent("ui.browser.action.start", { action, rxId });
+
+        const response = await fetch(`/${action}`, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+        const text = await response.text();
+        const durationMs = performance.now() - started;
+        emitBrowserEvent("ui.browser.action.complete", {
+          action,
+          rxId,
+          durationMs,
+          details: { status: String(response.status) }
+        });
+
+        if (!response.ok) {
+          throw new Error(`${action} ${rxId} failed with HTTP ${response.status}: ${text}`);
+        }
+        showResult(text);
+        return text;
+      }
+
+      async function runBatch(action, ids) {
+        if (ids.length === 0) {
+          emitBrowserEvent("ui.browser.batch.empty", { action, selectedCount: 0 });
+          return;
+        }
+
+        emitBrowserEvent("ui.browser.batch.start", { action, selectedCount: ids.length });
+        const failures = [];
+        for (const rxId of ids) {
+          try {
+            setActiveRx(rxId);
+            await postOperation(action, rxId);
+          } catch (error) {
+            failures.push(`${rxId}: ${error.message}`);
+          }
+        }
+
+        emitBrowserEvent("ui.browser.batch.complete", {
+          action,
+          selectedCount: ids.length,
+          details: { failures: String(failures.length) }
+        });
+
+        if (failures.length > 0) {
+          alert(failures.join("\n"));
+        }
+
+        window.location.reload();
+      }
+
+      rows.forEach(row => {
+        const rxId = row.dataset.rxId;
+        row.addEventListener("click", event => {
+          if (event.target.closest("button") || event.target.closest("input")) {
+            return;
+          }
+          setActiveRx(rxId);
+          emitBrowserEvent("ui.browser.row.open", { action: "lookup", rxId });
+          postOperation("lookup", rxId)
+            .catch(error => alert(error.message));
+        });
+      });
+
+      rowChecks.forEach(check => {
+        check.addEventListener("click", event => event.stopPropagation());
+        check.addEventListener("change", () => {
+          emitBrowserEvent("ui.browser.row.selection", {
+            action: check.checked ? "select" : "deselect",
+            rxId: check.value
+          });
+          updateSelectionState();
+        });
+      });
+
+      if (selectAll) {
+        selectAll.addEventListener("change", () => {
+          rowChecks.forEach(check => { check.checked = selectAll.checked; });
+          updateSelectionState();
+          emitBrowserEvent("ui.browser.table.selection", {
+            action: selectAll.checked ? "select_all" : "clear_all",
+            selectedCount: selectedIds().length
+          });
+        });
+      }
+
+      document.querySelectorAll("[data-row-action]").forEach(button => {
+        button.addEventListener("click", event => {
+          event.stopPropagation();
+          const row = button.closest("tr[data-rx-id]");
+          const rxId = row?.dataset.rxId;
+          const action = button.dataset.rowAction;
+          if (!rxId || !action) return;
+          setActiveRx(rxId);
+          postOperation(action, rxId)
+            .then(() => {
+              if (action !== "lookup") {
+                window.location.reload();
+              }
+            })
+            .catch(error => alert(error.message));
+        });
+      });
+
+      document.querySelectorAll("[data-batch-action]").forEach(button => {
+        button.addEventListener("click", () => {
+          const action = button.dataset.batchAction;
+          const ids = selectedIds();
+          if (action === "lookup") {
+            const rxId = ids[0];
+            if (!rxId) {
+              emitBrowserEvent("ui.browser.batch.empty", { action, selectedCount: 0 });
+              return;
+            }
+            setActiveRx(rxId);
+            postOperation("lookup", rxId)
+              .catch(error => alert(error.message));
+            return;
+          }
+          runBatch(action, ids);
+        });
+      });
+
+      updateSelectionState();
+      emitBrowserEvent("ui.browser.page.ready", {
+        selectedCount: 0,
+        details: { rowCount: String(rowChecks.length) }
+      });
+    })();
+  </script>
 </body>
 </html>
