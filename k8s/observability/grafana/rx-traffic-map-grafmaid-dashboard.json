@@ -85,7 +85,7 @@
       },
       "id": 1,
       "options": {
-        "content": "flowchart LR\n  classDef actor fill:#37474f,color:#fff,stroke:#102027,stroke-width:1px\n  classDef queue fill:#5d4037,color:#fff,stroke:#3e2723,stroke-width:1px\n  classDef store fill:#1565c0,color:#fff,stroke:#0d47a1,stroke-width:1px\n  classDef obs fill:#455a64,color:#fff,stroke:#263238,stroke-width:1px\n\n  ui[\"rx-ui<br/>UI -> API p95 ${__data.uiApiP95:display} ms\"]:::actor\n  api[\"api-gateway<br/>API p95 ${__data.apiP95:display} ms<br/>${__data.apiRps:display} req/s\"]:::actor\n  commands[(\"rx.commands<br/>publish ${__data.cmdPub:display}/s<br/>consume ${__data.cmdConsume:display}/s<br/>worker p95 ${__data.cmdP95:display} ms\")]:::queue\n  worker[\"legacy-sync-worker<br/>process p95 ${__data.workerP95:display} ms\"]:::actor\n  sql[(\"transactional SQL<br/>DB p95 ${__data.dbP95:display} ms\")]:::store\n  events[(\"rx.events<br/>publish ${__data.eventPub:display}/s<br/>consume ${__data.eventConsume:display}/s<br/>projection p95 ${__data.eventP95:display} ms\")]:::queue\n  projection[\"read-model-projection<br/>process p95 ${__data.projectionP95:display} ms\"]:::actor\n  redis[(\"Redis read model<br/>cache p95 ${__data.cacheP95:display} ms\")]:::store\n  grafana[\"Grafana / Prometheus<br/>map is metric-driven\"]:::obs\n\n  ui -->|HTTP calls| api\n  api -->|command publish| commands\n  commands -->|command consume| worker\n  worker -->|write model| sql\n  worker -->|event publish| events\n  events -->|event consume| projection\n  projection -->|cache writes| redis\n  api -->|read model lookups| redis\n\n  api -. metrics .-> grafana\n  worker -. metrics .-> grafana\n  projection -. metrics .-> grafana\n  ui -. metrics .-> grafana\n\n  style ui fill:${__data.uiApiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style api fill:${__data.apiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style commands fill:${__data.cmdP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style worker fill:${__data.workerP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style sql fill:${__data.dbP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px\n  style events fill:${__data.eventP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style projection fill:${__data.projectionP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style redis fill:${__data.cacheP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px",
+        "content": "flowchart LR\n  classDef actor fill:#37474f,color:#fff,stroke:#102027,stroke-width:1px\n  classDef client fill:#00695c,color:#fff,stroke:#003d33,stroke-width:1px\n  classDef queue fill:#5d4037,color:#fff,stroke:#3e2723,stroke-width:1px\n  classDef store fill:#1565c0,color:#fff,stroke:#0d47a1,stroke-width:1px\n  classDef obs fill:#455a64,color:#fff,stroke:#263238,stroke-width:1px\n\n  operator[\"Operator clicks table<br/>select / approve / renew\"]:::client\n  browserJs[\"rx-ui browser JS<br/>event rate ${__data.browserEventRps:display}/s\"]:::client\n  beacon[\"/browser-event<br/>p95 ${__data.browserEventP95:display} ms\"]:::client\n  ui[\"rx-ui server<br/>UI -> API p95 ${__data.uiApiP95:display} ms\"]:::actor\n  api[\"api-gateway<br/>API p95 ${__data.apiP95:display} ms<br/>${__data.apiRps:display} req/s\"]:::actor\n  commands[(\"rx.commands<br/>publish ${__data.cmdPub:display}/s<br/>consume ${__data.cmdConsume:display}/s<br/>worker p95 ${__data.cmdP95:display} ms\")]:::queue\n  worker[\"legacy-sync-worker<br/>process p95 ${__data.workerP95:display} ms\"]:::actor\n  sql[(\"transactional SQL<br/>DB p95 ${__data.dbP95:display} ms\")]:::store\n  events[(\"rx.events<br/>publish ${__data.eventPub:display}/s<br/>consume ${__data.eventConsume:display}/s<br/>projection p95 ${__data.eventP95:display} ms\")]:::queue\n  projection[\"read-model-projection<br/>process p95 ${__data.projectionP95:display} ms\"]:::actor\n  redis[(\"Redis read model<br/>cache p95 ${__data.cacheP95:display} ms\")]:::store\n  otel[\"OpenTelemetry Collector\"]:::obs\n  grafana[\"Grafana / Prometheus / Loki<br/>browser flow is metric-driven\"]:::obs\n\n  operator -->|DOM events| browserJs\n  browserJs -->|sendBeacon / fetch| beacon\n  beacon -->|server-side metric + log| ui\n  ui -->|HTTP calls| api\n  api -->|command publish| commands\n  commands -->|command consume| worker\n  worker -->|write model| sql\n  worker -->|event publish| events\n  events -->|event consume| projection\n  projection -->|cache writes| redis\n  api -->|read model lookups| redis\n\n  beacon -. metrics and logs .-> otel\n  api -. metrics .-> otel\n  worker -. metrics .-> otel\n  projection -. metrics .-> otel\n  ui -. metrics .-> otel\n  otel --> grafana\n\n  style browserJs fill:${__data.browserEventRps:color},color:#fff,stroke:#003d33,stroke-width:2px\n  style beacon fill:${__data.browserEventP95:color},color:#fff,stroke:#003d33,stroke-width:2px\n  style ui fill:${__data.uiApiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style api fill:${__data.apiP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style commands fill:${__data.cmdP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style worker fill:${__data.workerP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style sql fill:${__data.dbP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px\n  style events fill:${__data.eventP95:color},color:#fff,stroke:#3e2723,stroke-width:2px\n  style projection fill:${__data.projectionP95:color},color:#fff,stroke:#263238,stroke-width:2px\n  style redis fill:${__data.cacheP95:color},color:#fff,stroke:#0d47a1,stroke-width:2px",
         "escapeSpecialChars": false,
         "maxDataRows": 100
       },
@@ -181,6 +181,20 @@
           "legendFormat": "cache p95",
           "range": true,
           "refId": "cacheP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_api_duration_ms_bucket{route=\"/browser-event\",method=\"POST\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "browser event p95",
+          "range": true,
+          "refId": "browserEventP95"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_api_requests_total{route=\"/browser-event\",method=\"POST\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "browser events",
+          "range": true,
+          "refId": "browserEventRps"
         }
       ],
       "title": "Route Latency Traffic Map",
@@ -295,6 +309,13 @@
           "legendFormat": "cache {{operation}}",
           "range": true,
           "refId": "C"
+        },
+        {
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(rx_api_duration_ms_bucket{route=\"/browser-event\",method=\"POST\"}[$__rate_interval]))) or vector(0)",
+          "legendFormat": "browser /browser-event",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "P95 Latency by Route and Dependency",
@@ -415,6 +436,13 @@
           "legendFormat": "event consume/sec",
           "range": true,
           "refId": "E"
+        },
+        {
+          "editorMode": "code",
+          "expr": "sum(rate(rx_api_requests_total{route=\"/browser-event\",method=\"POST\"}[$__rate_interval])) or vector(0)",
+          "legendFormat": "browser events/sec",
+          "range": true,
+          "refId": "F"
         }
       ],
       "title": "Traffic Rates",
