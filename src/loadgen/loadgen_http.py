@@ -32,7 +32,7 @@ SERVICE_NAMESPACE = os.getenv("SERVICE_NAMESPACE", "rx")
 SERVICE_ENV = os.getenv("ENV", "dev")
 HEALTH_WEIGHT = float(os.getenv("HEALTH_WEIGHT", "10"))
 HEALTH_ERROR_PENALTY = float(os.getenv("HEALTH_ERROR_PENALTY", "15"))
-RPS = int(os.getenv("RPS", "2"))
+RPS = float(os.getenv("RPS", "2"))
 DURATION = int(os.getenv("DURATION_SECONDS", "0"))
 WORKERS = int(os.getenv("WORKERS", "4"))
 CLIENT_TIMEOUT_SECONDS = float(os.getenv("CLIENT_TIMEOUT_SECONDS", "10"))
@@ -356,7 +356,7 @@ def main():
     if total_mix <= 0:
         raise ValueError("Traffic mix must be greater than zero.")
 
-    interval = 1.0 / max(RPS, 1)
+    interval = 1.0 / max(RPS, 0.001)
     log_event(
         "loadgen.start",
         target=BASE_URL,

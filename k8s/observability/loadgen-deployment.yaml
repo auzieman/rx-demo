@@ -50,11 +50,11 @@ spec:
             - name: HEALTH_ERROR_PENALTY
               value: "15"
             - name: RPS
-              value: "1"
+              value: "0.25"
             - name: DURATION_SECONDS
               value: "0"
             - name: WORKERS
-              value: "2"
+              value: "1"
             - name: CLIENT_TIMEOUT_SECONDS
               value: "10"
             - name: RX_ID_PREFIX
@@ -62,13 +62,15 @@ spec:
             - name: RX_ID_POOL_SIZE
               value: "500"
             - name: MIX_READ
-              value: "0.25"
+              value: "0.50"
             - name: MIX_APPROVE
-              value: "0.40"
+              value: "0.25"
             - name: MIX_REFILL
-              value: "0.35"
+              value: "0.25"
             - name: FAULT_PROFILE
               value: "light"
+            - name: FAULT_RATE
+              value: "0.02"
             - name: FAULT_MODES
               value: "api-slow,api-error,worker-transient-once,worker-fail,projection-timeout,projection-fail,cache-fail"
             - name: PROGRESS_INTERVAL_SECONDS

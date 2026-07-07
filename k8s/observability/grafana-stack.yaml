@@ -247,6 +247,8 @@ spec:
               value: admin
             - name: GF_DATABASE_WAL
               value: "true"
+            - name: GF_INSTALL_PLUGINS
+              value: neildengg-grafmaid-panel
           volumeMounts:
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources/datasources.yml

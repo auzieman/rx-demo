@@ -4,6 +4,53 @@
 
 The project is intended to be easy to run in Docker Compose, portable to k3s, and useful for demonstrating logs, metrics, traces, message flow, retries, projections, and executive health scoring.
 
+RX-Demo is also a reference workload for validating operational automation. The
+public walkthrough is available at
+[auzietek.com/node/44](https://auzietek.com/node/44), with the accompanying
+[YouTube demo](https://www.youtube.com/watch?v=cUBXmTac_k8).
+
+## What This Demonstrates
+
+RX-Demo is intentionally larger than a CRUD sample. It shows how an application
+can be designed for operations from the beginning, with telemetry treated as a
+delivery contract rather than an afterthought.
+
+- Event-driven prescription commands and domain events through RabbitMQ.
+- SQL Server transactional writes and Redis read-model projection.
+- Structured JSON logs that can be queried and correlated in Loki.
+- Prometheus metrics for request rate, latency, queue flow, browser events, and
+  component health.
+- Distributed traces through OpenTelemetry and Tempo.
+- CloudEvents-style audit records for important business workflow events.
+- Grafana dashboards for engineering detail, service flow, traffic flow, traces,
+  CloudEvents, and executive health.
+- Kubernetes/k3s deployment paths that can be validated by automation instead
+  of only by manual inspection.
+
+## BlackKnight Controller Demo
+
+This repo is one of the reference workloads used while developing
+BlackKnight Controller, AuzieTek's infrastructure automation and orchestration
+platform. For the demo pipeline, BlackKnight does more than apply manifests. It
+checks whether the deployed application is actually reachable, observable, and
+ready for an engineer to use.
+
+The RX-Demo pipeline validates:
+
+- Kubernetes rollout state through the Kubernetes API.
+- Application readiness and health endpoints.
+- OpenTelemetry metric availability.
+- Prometheus scrape visibility.
+- Loki structured log and CloudEvents query paths.
+- Grafana dashboard provisioning.
+- Grafana plugin availability for Grafmaid/Mermaid flow panels.
+- RabbitMQ-backed command and event workflow behavior.
+- Published access links for the UI, API, and observability tools.
+
+The goal is continuous operational confidence: a deployment should not be called
+done until the runtime, telemetry, dashboards, and access paths all work
+together.
+
 ## Architecture
 
 ```mermaid
@@ -32,6 +79,11 @@ flowchart LR
     grafana --> loki
     grafana --> tempo
 ```
+
+Browser-level telemetry is included in the UI path. Table interactions and
+renew/approve actions are captured by lightweight browser JavaScript and sent
+through the rx-ui server so public-facing deployments do not need to expose Loki,
+Prometheus, or other collector endpoints directly to the browser.
 
 ## Services
 

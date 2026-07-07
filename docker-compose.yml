@@ -153,6 +153,7 @@ services:
       GF_DATABASE_QUERY_RETRIES: "30"
       GF_DATABASE_TRANSACTION_RETRIES: "30"
       GF_DATABASE_WAL: "true"
+      GF_INSTALL_PLUGINS: "neildengg-grafmaid-panel"
     volumes:
       - grafana-data:/var/lib/grafana
       - ./collector/grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
